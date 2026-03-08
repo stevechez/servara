@@ -7,6 +7,10 @@ export async function updateSession(request: NextRequest) {
 		request,
 	});
 
+	if (request.nextUrl.pathname.startsWith('/api/missed-call')) {
+		return NextResponse.next()
+	}
+
 	const supabase = createServerClient(
 		process.env.NEXT_PUBLIC_SUPABASE_URL!,
 		process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -39,15 +43,16 @@ export async function updateSession(request: NextRequest) {
 	// PROTECTED ROUTES LOGIC
 	// Redirect to login if there is no user and the route isn't public
 	if (
-		!user &&
-		!request.nextUrl.pathname.startsWith('/login') &&
-		!request.nextUrl.pathname.startsWith('/auth') &&
-		!request.nextUrl.pathname.startsWith('/public-view') // Allow customers to see estimates
-	) {
-		const url = request.nextUrl.clone();
-		url.pathname = '/login';
-		return NextResponse.redirect(url);
-	}
+    !user &&
+    request.nextUrl.pathname !== '/' && // 🟢 ALLOW THE ROOT (Landing Page)
+    !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/auth') &&
+    !request.nextUrl.pathname.startsWith('/public-view')
+) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
+}
 
 	return supabaseResponse;
 }
