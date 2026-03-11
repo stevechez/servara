@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, User, Briefcase, MapPin, Calendar } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -12,18 +12,40 @@ export default function NewJobModal() {
   const router = useRouter();
   const supabase = createClient();
 
+  // Data State for Pricebook
+  const [services, setServices] = useState<any[]>([]);
+
   // Form State
   const [customerName, setCustomerName] = useState('');
-  const [jobTitle, setJobTitle] = useState('');
+  const [selectedServiceId, setSelectedServiceId] = useState('');
   const [address, setAddress] = useState('');
   const [date, setDate] = useState('');
+
+  // Fetch Pricebook Services when the modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const fetchServices = async () => {
+        const { data } = await supabase
+          .from('pricebook_services')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+        if (data) setServices(data);
+      };
+      fetchServices();
+    }
+  }, [isOpen, supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // 1. Create the Customer First (because Jobs require a customer_id)
+      // 1. Get the actual service details from our state
+      const selectedService = services.find(s => s.id === selectedServiceId);
+      if (!selectedService) throw new Error("Please select a service.");
+
+      // 2. Create the Customer First
       const { data: newCustomer, error: customerError } = await supabase
         .from('customers')
         .insert([{ name: customerName, address: address }])
@@ -32,12 +54,12 @@ export default function NewJobModal() {
 
       if (customerError) throw customerError;
 
-      // 2. Create the Job linked to the new Customer
+      // 3. Create the Job (Using the Pricebook Service Name for the title)
       const { error: jobError } = await supabase
         .from('jobs')
         .insert([{
           customer_id: newCustomer.id,
-          title: jobTitle,
+          title: selectedService.name, // <-- Pulled directly from the Pricebook!
           address: address,
           scheduled_date: new Date(date).toISOString(),
           status: 'scheduled'
@@ -45,19 +67,18 @@ export default function NewJobModal() {
 
       if (jobError) throw jobError;
 
-      // 3. Close modal, reset form, and refresh dashboard
+      // 4. Close modal, reset form, and refresh dashboard
       setIsOpen(false);
       setCustomerName('');
-      setJobTitle('');
+      setSelectedServiceId('');
       setAddress('');
       setDate('');
       
-      // This tells Next.js to re-fetch the server data instantly
       router.refresh(); 
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating job:", error);
-      alert("Failed to create job. Check the console.");
+      alert(error.message || "Failed to create job. Check the console.");
     } finally {
       setLoading(false);
     }
@@ -77,8 +98,7 @@ export default function NewJobModal() {
       {/* MODAL OVERLAY */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[500] flex justify-end">
-            {/* Backdrop */}
+          <div className="fixed inset-0 z-[1000] flex justify-end">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -87,14 +107,14 @@ export default function NewJobModal() {
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
 
-            {/* Slide-out Drawer */}
             <motion.div 
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-md bg-white dark:bg-[#0B0E14] h-full shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col"
+              className="relative w-full max-w-md bg-white dark:bg-[#0B0E14] h-[100dvh] shadow-2xl border-l border-slate-200 dark:border-slate-800 flex flex-col"
             >
+              
               {/* Drawer Header */}
               <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
                 <div>
@@ -110,7 +130,7 @@ export default function NewJobModal() {
               </div>
 
               {/* Form Content */}
-              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+              <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
                 
                 <div>
                   <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 mb-2 px-1">
@@ -123,15 +143,27 @@ export default function NewJobModal() {
                   />
                 </div>
 
+                {/* THE NEW PRICEBOOK DROPDOWN */}
                 <div>
                   <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 mb-2 px-1">
-                    <Briefcase size={12} /> Job Title
+                    <Briefcase size={12} /> Select Service
                   </label>
-                  <input 
-                    required type="text" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)}
-                    placeholder="e.g. Emergency HVAC Repair"
-                    className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
-                  />
+                  <select 
+                    required 
+                    value={selectedServiceId} 
+                    onChange={(e) => setSelectedServiceId(e.target.value)}
+                    className="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                  >
+                    <option value="" disabled>Choose a service from your Pricebook...</option>
+                    {services.map(service => (
+                      <option key={service.id} value={service.id}>
+                        {service.name} (${service.base_price})
+                      </option>
+                    ))}
+                    {services.length === 0 && (
+                      <option value="" disabled>No services found. Add one in Settings!</option>
+                    )}
+                  </select>
                 </div>
 
                 <div>
@@ -158,10 +190,10 @@ export default function NewJobModal() {
               </form>
 
               {/* Drawer Footer */}
-              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0B0E14]">
+              <div className="p-6 pb-12 sm:pb-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0B0E14]">
                 <button 
                   onClick={handleSubmit}
-                  disabled={loading}
+                  disabled={loading || !selectedServiceId}
                   className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black hover:bg-slate-900 dark:hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Dispatching...' : 'Save & Dispatch'}

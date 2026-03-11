@@ -5,13 +5,13 @@ import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-export async function generateInvoiceFromJob(formData: FormData) {
-  const supabaseAdmin = createClient(
+export async function generateInvoiceFromJob(jobId: string) {
+  const supabaseAdmin = await createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const jobId = formData.get('jobId') as string
+
   if (!jobId) throw new Error("Critical Error: Missing job ID")
 
   // 1. Fetch the Job details

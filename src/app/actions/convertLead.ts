@@ -3,58 +3,60 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
-export async function convertMissedCall(leadId: string, callerPhone: string) {
-  try {
-    // 1. Initialize the secure SERVER Supabase client
-    const supabase = await createClient();
+export async function convertLead(leadId: string, formData: FormData) {
+  const supabase = await createClient();
 
-    // 2. Format phone for a nice name
-    const formatPhone = (phone: string) => {
-      const cleaned = ('' + phone).replace(/\D/g, '');
-      const match = cleaned.match(/^1?(\d{3})(\d{3})(\d{4})$/);
-      if (match) return `(${match[1]}) ${match[2]}-${match[3]}`;
-      return phone;
-    };
-    const prettyPhone = formatPhone(callerPhone);
-    const callerName = `New Caller ${prettyPhone}`;
+  // 1. Fetch the Lead's current data
+  const { data: lead, error: fetchError } = await supabase
+    .from('leads')
+    .select('*')
+    .eq('id', leadId)
+    .single();
 
-    // 3. Create a new Customer record
-    const { data: newCustomer, error: customerError } = await supabase
+  if (fetchError || !lead) return { success: false, error: 'Could not find lead' };
+
+  // 2. Clean up the name
+  const fullName = `${lead.first_name || ''} ${lead.last_name || ''}`.trim() || 'New Customer';
+
+  // 3. Prevent Duplicates (Check if a customer with this email already exists)
+  let customerId = null;
+  if (lead.email) {
+    const { data: existingCustomer } = await supabase
       .from('customers')
-      .insert({
-        name: callerName,
-        phone: callerPhone,
-      })
-      .select()
+      .select('id')
+      .eq('email', lead.email)
       .single();
-
-    if (customerError) throw customerError;
-
-    // 4. Create a new Lead attached to that Customer
-    const { error: leadError } = await supabase
-      .from('leads')
-      .insert({
-        name: `Missed Call Inquiry: ${prettyPhone}`, // 🟢 THE FIX IS RIGHT HERE!
-        customer_id: newCustomer.id,
-        status: 'new'
-      });
-
-    if (leadError) throw leadError;
-
-    // 5. Mark the missed call as 'converted'
-    const { error: updateError } = await supabase
-      .from('call_leads')
-      .update({ sms_thread_status: 'converted' })
-      .eq('id', leadId);
-
-    if (updateError) throw updateError;
-
-    // 6. Tell Next.js to instantly refresh the dashboard data!
-    revalidatePath('/');
-
-    return { success: true };
-  } catch (error: any) {
-    console.error("Server Action Error:", error.message);
-    return { success: false, error: error.message };
+    
+    if (existingCustomer) {
+      customerId = existingCustomer.id;
+    }
   }
+
+  // 4. Create the new Customer Profile if they don't exist
+  if (!customerId) {
+    const { error: insertError } = await supabase
+      .from('customers')
+      .insert([{
+        name: fullName,
+        email: lead.email || null,
+        phone: lead.phone || null,
+        address: null // We'll leave this blank for you to fill in later during scheduling
+      }]);
+
+    if (insertError) return { success: false, error: `Failed to create customer: ${insertError.message}` };
+  }
+
+  // 5. Mark the Lead as "Converted"
+  const { error: updateError } = await supabase
+    .from('leads')
+    .update({ status: 'converted' })
+    .eq('id', leadId);
+
+  if (updateError) return { success: false, error: updateError.message };
+
+  // 6. Refresh BOTH pages so the UI updates instantly everywhere
+  revalidatePath('/dashboard/leads');
+  revalidatePath('/dashboard/customers'); 
+  
+  return { success: true };
 }

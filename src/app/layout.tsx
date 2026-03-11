@@ -1,8 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from 'next-themes'
-import ThemeToggle from '@/components/v2/ThemeToggle';
+import { ThemeProvider } from '@/components/v2/ThemeProvider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,18 +13,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
-  title: 'Servara AI',
-  manifest: '/manifest.json',
-  themeColor: '#3b82f6',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'Servara',
-  },
+// 1. ADD THIS VIEWPORT EXPORT
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false, // Sometimes helpful to prevent accidental zooming
 };
-
+export const metadata: Metadata = {
+  title: "ServicePulse",
+  description: "Field Service Management",
+};
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,18 +31,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <header className="h-20 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-[#0B0E14] px-8 flex items-center justify-between">
-          <h2 className="text-xl font-black dark:text-white">Command Center</h2>
-          <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <div className="h-10 w-10 bg-slate-200 rounded-xl" />
-          </div>
-        </header>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/* ThemeProvider wraps everything so Dark Mode works globally */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        {children}
+          {children}
         </ThemeProvider>
       </body>
     </html>

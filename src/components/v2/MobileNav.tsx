@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Calendar, Target, Users } from 'lucide-react';
-import NewJobModal from './NewJobModal'; // Techs can dispatch from the field too!
+import NewJobModal from './NewJobModal';
 
 const navItems = [
   { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
@@ -16,8 +16,9 @@ export default function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-[900] bg-white/80 dark:bg-[#0B0E14]/80 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 pb-safe">
-      <div className="flex items-center justify-around px-2 py-3">
+    // FIX 2: Added 'pb-8' (padding-bottom) to push the icons up and away from the iOS URL/Swipe bar
+    <div className="w-full bg-white/90 dark:bg-[#0B0E14]/90 backdrop-blur-xl pb-8 pt-2 px-2">
+      <div className="flex items-center justify-around">
         
         {navItems.slice(0, 2).map((item) => {
           const isActive = pathname === item.href;
@@ -36,11 +37,10 @@ export default function MobileNav() {
           );
         })}
 
-        {/* CENTER ACTION BUTTON: Dispatch Job */}
-        <div className="relative -top-5">
+        {/* CENTER ACTION BUTTON */}
+        <div className="relative -top-6">
           <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
-          <div className="relative bg-blue-600 text-white p-4 rounded-full shadow-xl shadow-blue-500/30 border-4 border-white dark:border-[#050608]">
-            {/* We wrap NewJobModal so just the Plus icon shows, hiding the text on mobile */}
+          <div className="relative bg-blue-600 text-white p-4 rounded-full shadow-xl shadow-blue-500/30 border-4 border-white dark:border-[#0B0E14]">
             <div className="[&>button>span]:hidden [&>button]:p-0 [&>button]:bg-transparent [&>button]:shadow-none [&>button:hover]:bg-transparent">
                <NewJobModal />
             </div>

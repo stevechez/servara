@@ -1,85 +1,129 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Calendar, Users, FileText, Settings, LogOut, Wrench, Target } from 'lucide-react';
-import NewJobModal from './NewJobModal';
-import { createClient } from '@/lib/supabase/client';
+import { usePathname } from 'next/navigation';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Zap, 
+  Wrench, 
+  Settings, 
+  LogOut,
+  ExternalLink
+} from 'lucide-react';
+import { signOut } from '@/app/actions/auth';
 
 const navItems = [
   { name: 'Command Center', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Leads Pipeline', href: '/leads', icon: Target },
-  { name: 'Schedule', href: '/schedule', icon: Calendar },
-  { name: 'Customers', href: '/customers', icon: Users },
-  { name: 'Invoices', href: '/invoices', icon: FileText },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Leads Pipeline', href: '/dashboard/leads', icon: Zap },
+  { name: 'Customers & Jobs', href: '/dashboard/customers', icon: Users },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const supabase = createClient();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
-  };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-[#0B0E14] border-r border-slate-200 dark:border-slate-800">
+    <aside className="w-64 bg-slate-900 min-h-screen flex flex-col border-r border-slate-800 transition-all">
       
-      {/* BRANDING */}
-      <div className="h-20 flex items-center px-6 border-b border-slate-100 dark:border-slate-800">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
-            <Wrench className="h-5 w-5 text-white" />
+      {/* BRAND LOGO - Upgraded to Servara Pro */}
+      <div className="h-20 flex items-center px-6 border-b border-slate-800/50">
+        <Link href="/dashboard" className="font-black text-xl tracking-tight flex items-center gap-2 text-white hover:opacity-80 transition-opacity">
+          <div className="bg-blue-600 p-1.5 rounded-lg shadow-lg shadow-blue-900/50">
+            <Wrench className="text-white" size={20} />
           </div>
-          <span className="font-black italic text-xl tracking-tight dark:text-white">SERVARA</span>
+          SERVARA <span className="text-blue-500">PRO</span>
         </Link>
       </div>
 
-      {/* PRIMARY ACTION: THE SLIDE-OUT DRAWER */}
-      <div className="p-6">
-        <div className="w-full [&>button]:w-full [&>button]:justify-center">
-          <NewJobModal />
-        </div>
-      </div>
-
       {/* NAVIGATION LINKS */}
-      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 py-6 space-y-2">
+        <p className="px-2 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Main Menu</p>
+        
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          // Bulletproof exact-match logic so only ONE tab highlights at a time
+          const isActive = item.href === '/dashboard' 
+            ? pathname === '/dashboard' 
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            
           const Icon = item.icon;
-          
+
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+              className={`flex items-center gap-3 px-3 py-3 rounded-xl font-bold text-sm transition-all group ${
                 isActive 
-                  ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' 
-                  : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              <Icon size={18} className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'} />
+              <Icon 
+                size={18} 
+                className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-blue-400 transition-colors'} 
+              />
               {item.name}
             </Link>
           );
         })}
       </nav>
 
-      {/* FOOTER / LOGOUT */}
-      <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+      {/* BOTTOM ACTION / SETTINGS */}
+      <div className="p-4 border-t border-slate-800/50 space-y-2">
         <button 
-          onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl font-bold text-sm text-slate-500 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          onClick={() => alert("Portal Link Copied!")}
+          className="w-full flex items-center justify-between px-3 py-3 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all group"
         >
-          <LogOut size={18} />
-          Sign Out
+          <span className="flex items-center gap-3">
+            <ExternalLink size={18} className="text-slate-500 group-hover:text-white" />
+            Client Portal
+          </span>
+        </button>
+        
+        <button 
+          onClick={() => alert("Settings coming soon!")}
+          className="w-full flex items-center gap-3 px-3 py-3 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all group"
+        >
+          <Settings size={18} className="text-slate-500 group-hover:text-white" />
+          Settings
         </button>
       </div>
-      
+
+      {/* USER PROFILE */}
+      <div className="p-4 m-4 bg-slate-800/50 rounded-2xl flex items-center justify-between border border-slate-700/50">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-black text-xs shadow-inner">
+            A
+          </div>
+          <div>
+            <p className="text-xs font-bold text-white leading-none">Admin</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Owner</p>
+          </div>
+        </div>
+        
+        {/* USER PROFILE */}
+{/* <div className="p-4 m-4 bg-slate-800/50 rounded-2xl flex items-center justify-between border border-slate-700/50"> */}
+  {/* <div className="flex items-center gap-3">
+    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-black text-xs shadow-inner">
+      A
     </div>
+    <div>
+      <p className="text-xs font-bold text-white leading-none">Admin</p>
+      <p className="text-[10px] text-slate-400 mt-0.5">Owner</p>
+    </div>
+  </div> */}
+  
+  {/* 👇 Wrap the logout button in a form to call the signOut action */}
+  {/* <form action={signOut}>
+    <button 
+      type="submit"
+      title="Sign Out"
+      className="text-slate-500 hover:text-red-400 transition-colors p-2 hover:bg-slate-800 rounded-lg"
+    >
+      <LogOut size={16} />
+    </button>
+  </form> */}
+{/* </div> */}
+      </div>
+    </aside>
   );
 }
