@@ -1,12 +1,52 @@
-// src/lib/actions/jobs.ts
 'use server'
 
-import { createClient } from '@supabase/supabase-js'
+// 1. Rename the raw Supabase client so it doesn't conflict
+import { createClient as createAdminClient } from '@supabase/supabase-js'
+
+// 2. Import your Next.js Server Client
+import { createClient } from '@/lib/supabase/server'
+
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
+// --- NORMAL USER ACTIONS ---
+export async function scheduleJobFromEstimate(formData: FormData) {
+  // Uses the Next.js auth-aware client
+  const supabase = await createClient();
+  
+  const customerId = formData.get('customer_id') as string;
+  const serviceType = formData.get('service_type') as string;
+  const date = formData.get('scheduled_at') as string;
+
+  if (!customerId || !serviceType) {
+    throw new Error('Missing required fields');
+  }
+
+  const { data: newJob, error } = await supabase
+    .from('jobs')
+    .insert({
+      customer_id: customerId,
+      service_type: serviceType,
+      status: 'scheduled',
+      scheduled_at: date || new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error || !newJob) {
+    console.error("Failed to schedule job:", error);
+    throw new Error("Could not schedule job from estimate.");
+  }
+
+  revalidatePath('/dashboard/jobs');
+  redirect(`/dashboard/jobs/${newJob.id}`);
+}
+
+
+// --- ADMIN OVERRIDE ACTIONS ---
 export async function approveEstimateAndCreateJob(formData: FormData) {
-  const supabaseAdmin = createClient(
+  // Uses the raw client with the Service Role Key to bypass rules
+  const supabaseAdmin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
@@ -30,7 +70,7 @@ export async function approveEstimateAndCreateJob(formData: FormData) {
   const { data: job, error: jobError } = await supabaseAdmin
     .from('jobs')
     .insert([{
-      company_id: est.company_id,
+      company_id: est.company_id, // Make sure 'company_id' exists in your jobs table, otherwise remove this line!
       customer_id: est.customer_id,
       estimate_id: est.id,
       title: `${est.service_type || 'General'} Service Job`,
@@ -45,8 +85,6 @@ export async function approveEstimateAndCreateJob(formData: FormData) {
     throw new Error(`Job creation failed: ${jobError.message}`)
   }
 
-  
-
   // 4. Cleanup and Redirect
   revalidatePath('/estimates')
   revalidatePath('/jobs')
@@ -55,10 +93,8 @@ export async function approveEstimateAndCreateJob(formData: FormData) {
   redirect(`/jobs/${job.id}`)
 }
 
-// Add this to the bottom of src/lib/actions/jobs.ts
-
 export async function updateJobStatus(formData: FormData) {
-  const supabaseAdmin = createClient(
+  const supabaseAdmin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
@@ -84,4 +120,32 @@ export async function updateJobStatus(formData: FormData) {
   // 2. Refresh both the list page and this specific job page
   revalidatePath('/jobs')
   revalidatePath(`/jobs/${jobId}`)
+}
+
+// Add this to the very bottom of src/lib/actions/jobs.ts
+
+export async function completeJobAction(payload: string | FormData) {
+  const supabase = await createClient();
+  
+  // Safely extract the ID whether it came from a <form> or an onClick={() => ...}
+  const jobId = typeof payload === 'string' ? payload : payload.get('jobId') as string;
+
+  if (!jobId) {
+    throw new Error("Missing job ID");
+  }
+
+  // Update the status to 'completed'
+  const { error } = await supabase
+    .from('jobs')
+    .update({ status: 'completed' })
+    .eq('id', jobId);
+
+  if (error) {
+    console.error("COMPLETION ERROR:", error.message);
+    throw new Error(`Failed to complete job: ${error.message}`);
+  }
+
+  // Refresh the UI so the dashboard updates instantly
+  revalidatePath('/dashboard/jobs');
+  revalidatePath('/dashboard/analytics'); 
 }
