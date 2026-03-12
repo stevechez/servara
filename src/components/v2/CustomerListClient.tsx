@@ -27,7 +27,7 @@ export default function CustomerListClient({ customers }: { customers: any[] }) 
             Customer Directory
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">
-               relationships and service history.
+              Manage your client base and view service history.
           </p>
         </div>
         

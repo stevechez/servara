@@ -19,6 +19,6 @@ export async function createCustomer(formData: FormData) {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/customers');
+  revalidatePath('/dashboard/customers');
   return { success: true };
 }

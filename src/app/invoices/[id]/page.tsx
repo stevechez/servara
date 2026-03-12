@@ -9,26 +9,30 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
   // Fetch the invoice, plus the linked job and customer data
   const { data: invoice, error } = await supabase
     .from('invoices')
-    .select(`
+    .select(
+      `
       *,
       jobs (*),
       customers (*)
-    `)
+    `
+    )
     .eq('id', invoiceId)
     .single();
 
   // ADD THIS LINE RIGHT HERE:
-  console.log("SUPABASE ERROR:", error);
+  console.log('SUPABASE ERROR:', error);
 
   if (error || !invoice) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#0B0E14] flex items-center justify-center p-6">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 dark:bg-[#0B0E14]">
+        <div className="space-y-4 text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100 text-red-600">
             <Receipt size={32} />
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white">Invoice Not Found</h1>
-          <p className="text-slate-500 font-medium">This invoice may have been deleted or the link is invalid.</p>
+          <p className="font-medium text-slate-500">
+            This invoice may have been deleted or the link is invalid.
+          </p>
         </div>
       </div>
     );
@@ -41,88 +45,120 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
   const isPaid = invoice.status === 'paid';
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0E14] py-12 px-6 selection:bg-blue-500/30">
-      <div className="max-w-3xl mx-auto">
-        
+    <div className="min-h-screen bg-slate-50 px-6 py-12 selection:bg-blue-500/30 dark:bg-[#0B0E14]">
+      <div className="mx-auto max-w-3xl">
         {/* Top Action Bar */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-600/20">
               <Building2 className="text-white" size={16} />
             </div>
-            <span className="text-xl font-black uppercase tracking-tighter italic text-slate-900 dark:text-white">
-              Servara<span className="text-blue-600">Pro</span>
+            <span className="text-xl font-black tracking-tighter text-slate-900 uppercase italic dark:text-white">
+              Zidro<span className="text-blue-600">Pro</span>
             </span>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#12161D] border border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-white/5 transition-colors shadow-sm">
+          <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black tracking-widest text-slate-600 uppercase shadow-sm transition-colors hover:bg-slate-50 dark:border-white/5 dark:bg-[#12161D] dark:text-slate-300 dark:hover:bg-white/5">
             <Download size={16} /> Save PDF
           </button>
         </div>
 
         {/* The Invoice Paper */}
-        <div className="bg-white dark:bg-[#12161D] border border-slate-200 dark:border-white/5 rounded-[2.5rem] shadow-xl overflow-hidden relative">
-          
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white shadow-xl dark:border-white/5 dark:bg-[#12161D]">
           {/* PAID WATERMARK */}
           {isPaid && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 pointer-events-none opacity-5 dark:opacity-10">
-              <span className="text-9xl font-black text-green-500 uppercase tracking-widest border-8 border-green-500 rounded-3xl p-8">
+            <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-12 opacity-5 dark:opacity-10">
+              <span className="rounded-3xl border-8 border-green-500 p-8 text-9xl font-black tracking-widest text-green-500 uppercase">
                 PAID
               </span>
             </div>
           )}
 
-          <div className="p-8 md:p-12 border-b border-slate-100 dark:border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+          <div className="relative z-10 flex flex-col items-start justify-between gap-6 border-b border-slate-100 p-8 md:flex-row md:items-center md:p-12 dark:border-white/5">
             <div>
-              <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Invoice</h1>
-              <p className="text-slate-500 font-medium">#{invoice.id.split('-')[0].toUpperCase()}</p>
+              <h1 className="mb-2 text-3xl font-black tracking-tight text-slate-900 md:text-4xl dark:text-white">
+                Invoice
+              </h1>
+              <p className="font-medium text-slate-500">
+                #{invoice.id.split('-')[0].toUpperCase()}
+              </p>
             </div>
             <div className="text-left md:text-right">
-              <p className="text-sm text-slate-500 font-medium mb-1">Amount Due</p>
-              <p className="text-4xl md:text-5xl font-black text-blue-600 tracking-tight">${invoice.amount}</p>
-              <div className={`mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                isPaid ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-              }`}>
-                {isPaid ? <><CheckCircle2 size={12} /> Paid in Full</> : <><Receipt size={12} /> Pending Payment</>}
+              <p className="mb-1 text-sm font-medium text-slate-500">Amount Due</p>
+              <p className="text-4xl font-black tracking-tight text-blue-600 md:text-5xl">
+                ${invoice.amount}
+              </p>
+              <div
+                className={`mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-black tracking-widest uppercase ${
+                  isPaid
+                    ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
+                    : 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+                }`}
+              >
+                {isPaid ? (
+                  <>
+                    <CheckCircle2 size={12} /> Paid in Full
+                  </>
+                ) : (
+                  <>
+                    <Receipt size={12} /> Pending Payment
+                  </>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="p-8 md:p-12 relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
+          <div className="relative z-10 p-8 md:p-12">
+            <div className="mb-12 grid grid-cols-1 gap-12 md:grid-cols-2">
               <div>
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Billed To</h3>
-                <p className="text-lg font-bold text-slate-900 dark:text-white mb-1">{customer?.name || 'Valued Customer'}</p>
-                <p className="text-sm text-slate-500 font-medium">{customer?.address || 'No address on file'}</p>
-                <p className="text-sm text-slate-500 font-medium mt-1">{customer?.email}</p>
+                <h3 className="mb-4 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                  Billed To
+                </h3>
+                <p className="mb-1 text-lg font-bold text-slate-900 dark:text-white">
+                  {customer?.name || 'Valued Customer'}
+                </p>
+                <p className="text-sm font-medium text-slate-500">
+                  {customer?.address || 'No address on file'}
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-500">{customer?.email}</p>
               </div>
               <div>
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Service Details</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 font-medium mb-2">
-                  <span className="font-bold text-slate-900 dark:text-white">Date:</span> {new Date(invoice.created_at).toLocaleDateString()}
+                <h3 className="mb-4 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                  Service Details
+                </h3>
+                <p className="mb-2 text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <span className="font-bold text-slate-900 dark:text-white">Date:</span>{' '}
+                  {new Date(invoice.created_at).toLocaleDateString()}
                 </p>
-                <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
-                  <span className="font-bold text-slate-900 dark:text-white">Service:</span> {job?.service_type || 'General Service Call'}
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  <span className="font-bold text-slate-900 dark:text-white">Service:</span>{' '}
+                  {job?.service_type || 'General Service Call'}
                 </p>
               </div>
             </div>
 
             {/* Line Items Table */}
-            <div className="border border-slate-200 dark:border-white/5 rounded-2xl overflow-hidden mb-12">
-              <table className="w-full text-left border-collapse">
+            <div className="mb-12 overflow-hidden rounded-2xl border border-slate-200 dark:border-white/5">
+              <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-white/5">
+                  <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black tracking-widest text-slate-400 uppercase dark:border-white/5 dark:bg-white/5">
                     <th className="p-4">Description</th>
                     <th className="p-4 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm font-medium">
                   <tr className="border-b border-slate-100 dark:border-white/5">
-                    <td className="p-4 text-slate-900 dark:text-white">Standard Service Call & Labor</td>
-                    <td className="p-4 text-right text-slate-900 dark:text-white">${invoice.amount}</td>
+                    <td className="p-4 text-slate-900 dark:text-white">
+                      Standard Service Call & Labor
+                    </td>
+                    <td className="p-4 text-right text-slate-900 dark:text-white">
+                      ${invoice.amount}
+                    </td>
                   </tr>
                   <tr className="bg-slate-50 dark:bg-[#0B0E14]">
                     <td className="p-4 text-right font-bold text-slate-500">Total Due:</td>
-                    <td className="p-4 text-right font-black text-lg text-slate-900 dark:text-white">${invoice.amount}</td>
+                    <td className="p-4 text-right text-lg font-black text-slate-900 dark:text-white">
+                      ${invoice.amount}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -130,20 +166,22 @@ export default async function PublicInvoicePage({ params }: { params: Promise<{ 
 
             {/* Payment Call to Action */}
             {!isPaid && (
-              <div className="bg-slate-900 dark:bg-blue-600 rounded-2xl p-6 text-center text-white">
-                <h3 className="text-lg font-black mb-2">Ready to settle up?</h3>
-                <p className="text-slate-400 dark:text-blue-100 text-sm mb-6 font-medium">Pay securely via credit card or bank transfer.</p>
-                <button className="w-full sm:w-auto mx-auto flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 dark:bg-white text-white dark:text-blue-600 rounded-xl text-sm font-black uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-blue-500/20 active:scale-95">
+              <div className="rounded-2xl bg-slate-900 p-6 text-center text-white dark:bg-blue-600">
+                <h3 className="mb-2 text-lg font-black">Ready to settle up?</h3>
+                <p className="mb-6 text-sm font-medium text-slate-400 dark:text-blue-100">
+                  Pay securely via credit card or bank transfer.
+                </p>
+                <button className="mx-auto flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-sm font-black tracking-widest text-white uppercase shadow-xl shadow-blue-500/20 transition-transform hover:scale-105 active:scale-95 sm:w-auto dark:bg-white dark:text-blue-600">
                   <CreditCard size={18} /> Pay ${invoice.amount} Now
                 </button>
               </div>
             )}
           </div>
         </div>
-        
+
         {/* Footer */}
-        <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest mt-8">
-          Powered by ServaraPro
+        <p className="mt-8 text-center text-xs font-bold tracking-widest text-slate-400 uppercase">
+          Powered by ZidroPro
         </p>
       </div>
     </div>

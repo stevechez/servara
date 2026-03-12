@@ -1,7 +1,7 @@
 import HomeownerPresentation from '@/components/v2/HomeownerPresentation';
 import { Suspense } from 'react';
 
-export const metadata = { title: 'Proposal | Servara' };
+export const metadata = { title: 'Proposal | Zidro' };
 
 function PresentationRoute() {
   return <HomeownerPresentation />;

@@ -72,7 +72,7 @@ function JobCard({ job, nextStatus, actionIcon, actionText, color }: any) {
         <span className="font-black text-slate-900">${job.amount}</span>
       </div>
 
-      <Link href={`/customers/${customer?.id}`} className="block mb-4 hover:opacity-80 transition-opacity">
+      <Link href={`/dashboard/customers/${customer?.id}`} className="block mb-4 hover:opacity-80 transition-opacity">
         <h3 className="font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
           {customer?.name || 'Unknown Client'}
         </h3>

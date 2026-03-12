@@ -2,5 +2,10 @@
 	"deno.enable": true,
 	"deno.enablePaths": ["supabase/functions"],
 	"deno.unstable": true,
-	"deno.importMap": "./supabase/functions/import_map.json"
+	"deno.importMap": "./supabase/functions/import_map.json",
+	"files.exclude": {
+    "**/.next": true
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
 }

@@ -1,6 +1,6 @@
 {
-  "name": "Servara AI Field OS",
-  "short_name": "Servara",
+  "name": "Zidro AI Field OS",
+  "short_name": "Zidro",
   "description": "AI-First Operating System for Field Technicians",
   "start_url": "/dashboard",
   "display": "standalone",

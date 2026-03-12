@@ -18,8 +18,8 @@ export async function completeJob(jobId: string, customerId: string, formData: F
   }
 
   // Refresh the pages
-  revalidatePath(`/customers/${customerId}`);
-  revalidatePath('/'); 
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  revalidatePath('/dashboard'); 
   
   // Notice we removed `return { success: true }`. 
   // This satisfies TypeScript's requirement for a Promise<void> return type.

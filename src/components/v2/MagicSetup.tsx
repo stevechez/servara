@@ -1,111 +1,172 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
-import { generateBusinessServices } from '@/app/actions/generateServices';
-import { saveServicesToDb } from '@/app/actions/saveServices';
+import { Sparkles, Wrench, DollarSign, Globe, Check, Loader2, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 
 export default function MagicSetup() {
-  const [input, setInput] = useState('');
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [generatedServices, setGeneratedServices] = useState<any[] | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
 
-  async function handleMagicGenerate() {
-    if (!input) return;
+  const completeSetup = async (niche: string) => {
     setLoading(true);
-    
-    // Call our new Server Action!
-    const result = await generateBusinessServices(input);
-    
-    if (result.success) {
-      setGeneratedServices(result.services);
-    } else {
-      alert("Oops, the AI hiccuped: " + result.error);
+
+    const starterServices: Record<string, any[]> = {
+      Plumbing: [
+        { name: 'Emergency Service Call', base_price: 185, category: 'General' },
+        { name: 'Drain Snaking (Basic)', base_price: 225, category: 'Drainage' },
+        { name: 'Toilet Replacement', base_price: 450, category: 'Fixtures' },
+        { name: 'Water Heater Flush', base_price: 150, category: 'Maintenance' },
+      ],
+      HVAC: [
+        { name: 'Diagnostic Fee', base_price: 125, category: 'Service' },
+        { name: 'A/C Tune-up', base_price: 195, category: 'Maintenance' },
+        { name: 'Furnace Inspection', base_price: 150, category: 'Safety' },
+        { name: 'Refrigerant Recharge', base_price: 350, category: 'Repair' },
+      ],
+      Electrical: [
+        { name: 'Safety Inspection', base_price: 150, category: 'Safety' },
+        { name: 'Panel Upgrade', base_price: 2500, category: 'Infrastructure' },
+        { name: 'Outlet/Switch Install', base_price: 95, category: 'General' },
+        { name: 'EV Charger Setup', base_price: 800, category: 'Green Energy' },
+      ],
+    };
+
+    const servicesToInject = starterServices[niche] || starterServices['Plumbing'];
+
+    try {
+      const { error } = await supabase
+        .from('service_items')
+        .insert(servicesToInject.map((s) => ({ ...s, is_active: true })));
+
+      if (error) throw error;
+
+      setTimeout(() => {
+        setLoading(false);
+        setStep(4); // Move to Success State
+        router.refresh();
+      }, 2000);
+    } catch (err) {
+      console.error('AI Injection failed', err);
+      setLoading(false);
+      alert('Setup failed to save. Check database connection.');
     }
-    
-    setLoading(false);
-  }
+  };
+
+  const steps = [
+    { title: 'Service Niche', icon: <Wrench size={20} />, text: "What's your primary trade?" },
+    { title: 'Price Baseline', icon: <DollarSign size={20} />, text: 'Average service call fee?' },
+    { title: 'Service Radius', icon: <Globe size={20} />, text: 'How far do you travel?' },
+  ];
+
+  const handleNext = () => {
+    if (step < steps.length - 1) setStep(step + 1);
+  };
 
   return (
-    <div className="bg-white dark:bg-[#0B0E14] border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-sm p-6 md:p-8 mt-8">
-      
-      {/* HEADER */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2.5 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
-          <Sparkles size={20} />
+    <div className="shadow-soft group relative flex h-full min-h-[400px] flex-col justify-between overflow-hidden rounded-[2.5rem] border border-slate-200 bg-white p-8 dark:border-white/5 dark:bg-[#12161D]">
+      {/* Background Aesthetic */}
+      <div className="pointer-events-none absolute -top-10 -left-10 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl transition-all group-hover:bg-blue-500/20" />
+
+      <div>
+        <div className="mb-6 flex items-center gap-3">
+          <div className="rounded-xl bg-blue-600 p-2.5 text-white shadow-lg shadow-blue-500/20">
+            <Sparkles size={20} className={loading ? 'animate-spin' : ''} />
+          </div>
+          <div>
+            <h2 className="text-lg leading-none font-black tracking-tight italic dark:text-white">
+              Magic Setup
+            </h2>
+            <p className="mt-1 text-[10px] font-black tracking-widest text-blue-600 uppercase">
+              AI Config Engine
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight italic">AI Business Setup</h2>
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Tell us what you do, and we'll build your service menu instantly.</p>
-        </div>
+
+        {loading ? (
+          <div className="flex h-48 animate-pulse flex-col items-center justify-center py-12">
+            <Loader2 className="mb-4 animate-spin text-blue-600" size={40} />
+            <p className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">
+              Building your price book...
+            </p>
+          </div>
+        ) : step === 4 ? (
+          <div className="animate-in zoom-in py-8 text-center duration-500">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 shadow-inner">
+              <Check size={36} strokeWidth={3} />
+            </div>
+            <p className="text-xl font-black text-slate-900 italic dark:text-white">
+              Business Profile Live
+            </p>
+            <p className="mt-2 text-xs leading-relaxed font-bold tracking-widest text-slate-500 uppercase">
+              Pricing engine is now active.
+            </p>
+          </div>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="mb-2 flex items-center gap-2 text-slate-400">
+              {steps[step].icon}
+              <span className="text-[10px] font-black tracking-widest uppercase">
+                {steps[step].title}
+              </span>
+            </div>
+            <p className="mb-8 text-2xl leading-tight font-black text-slate-900 italic dark:text-white">
+              {steps[step].text}
+            </p>
+
+            <div className="space-y-3">
+              {step === 0 &&
+                ['Plumbing', 'HVAC', 'Electrical'].map((niche) => (
+                  <button
+                    key={niche}
+                    onClick={() => completeSetup(niche)}
+                    className="group/btn flex w-full items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 p-5 text-left text-sm font-black transition-all hover:border-blue-500 hover:bg-white dark:border-white/5 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-blue-500/10"
+                  >
+                    {niche}
+                    <ArrowRight
+                      size={16}
+                      className="-translate-x-2 text-blue-600 opacity-0 transition-all group-hover/btn:translate-x-0 group-hover/btn:opacity-100"
+                    />
+                  </button>
+                ))}
+
+              {step === 1 &&
+                ['$99 - Basic', '$149 - Standard', '$199 - Premium'].map((p) => (
+                  <button
+                    key={p}
+                    onClick={handleNext}
+                    className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-5 text-left text-sm font-black transition-all hover:border-blue-500 dark:border-white/5 dark:bg-white/5 dark:text-slate-300"
+                  >
+                    {p}
+                  </button>
+                ))}
+
+              {step === 2 &&
+                ['15 miles', '25 miles', '50 miles'].map((r) => (
+                  <button
+                    key={r}
+                    onClick={handleNext}
+                    className="w-full rounded-2xl border border-slate-100 bg-slate-50 p-5 text-left text-sm font-black transition-all hover:border-blue-500 dark:border-white/5 dark:bg-white/5 dark:text-slate-300"
+                  >
+                    {r}
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {!generatedServices ? (
-        
-        /* SLEEK INPUT FORM */
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input 
-            type="text" 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="e.g., I run a mobile dog grooming business in Austin..."
-            className="flex-1 px-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            onKeyDown={(e) => e.key === 'Enter' && handleMagicGenerate()}
-          />
-          <button 
-            onClick={handleMagicGenerate}
-            disabled={loading || !input}
-            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-slate-900 dark:hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
-          >
-            {loading ? <><Loader2 size={16} className="animate-spin" /> Generating...</> : 'Generate Menu'}
-          </button>
-        </div>
-
-      ) : (
-
-        /* GENERATED RESULTS */
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {generatedServices.map((svc, idx) => (
-              <div key={idx} className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-xl p-5 hover:border-blue-300 dark:hover:border-blue-500/50 transition-colors">
-                <div className="flex justify-between items-start mb-2 gap-4">
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">{svc.name}</h3>
-                  <span className="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-black px-2 py-1 rounded-lg text-[10px] tracking-widest uppercase shrink-0">
-                    ${svc.price}
-                  </span>
-                </div>
-                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium leading-relaxed">{svc.description}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-6 gap-4">
-            <button 
-              onClick={() => setGeneratedServices(null)}
-              className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-xs font-black uppercase tracking-widest transition-colors"
-            >
-              Start Over
-            </button>
-            <button 
-              onClick={async () => {
-                setIsSaving(true);
-                const result = await saveServicesToDb(generatedServices);
-                if (result.success) {
-                  alert("Services successfully saved to your database! 🚀");
-                  setGeneratedServices(null); 
-                  setInput('');
-                } else {
-                  alert("Failed to save: " + result.error);
-                }
-                setIsSaving(false);
-              }}
-              disabled={isSaving}
-              className="w-full sm:w-auto bg-slate-900 dark:bg-blue-600 text-white px-6 py-2.5 rounded-xl text-sm font-black hover:bg-slate-800 dark:hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md shadow-blue-500/20"
-            >
-              {isSaving ? 'Saving...' : 'Save to Database'} <CheckCircle2 size={16} />
-            </button>
-          </div>
+      {step < 3 && !loading && (
+        <div className="mt-8 flex gap-2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className={`h-1.5 flex-1 rounded-full transition-all duration-700 ${i <= step ? 'bg-blue-600 shadow-[0_0_10px_rgba(37,99,235,0.5)]' : 'bg-slate-100 dark:bg-white/5'}`}
+            />
+          ))}
         </div>
       )}
     </div>

@@ -13,7 +13,7 @@ export default async function NewEstimatePage({
   const { lead_id } = await searchParams;
   
   if (!lead_id) {
-    redirect('/leads') // If they try to load this without a lead, kick them back
+    redirect('/dashboard/leads') // If they try to load this without a lead, kick them back
   }
 
   const supabase = await createClient()
@@ -28,7 +28,7 @@ export default async function NewEstimatePage({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/leads" className="p-2 rounded-md hover:bg-gray-100 text-gray-500">
+        <Link href="/dashboard/leads" className="p-2 rounded-md hover:bg-gray-100 text-gray-500">
           <ArrowLeft size={20} />
         </Link>
         <div>

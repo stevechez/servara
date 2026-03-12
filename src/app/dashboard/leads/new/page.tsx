@@ -8,7 +8,7 @@ export default function NewLeadPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
         <Link 
-          href="/leads" 
+          href="/dashboard/leads" 
           className="p-2 rounded-md hover:bg-gray-100 text-gray-500 transition-colors"
         >
           <ArrowLeft size={20} />
@@ -115,7 +115,7 @@ export default function NewLeadPage() {
           {/* Actions */}
           <div className="pt-6 flex justify-end gap-3 border-t">
             <Link 
-              href="/leads"
+              href="/dashboard/leads"
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
             >
               Cancel

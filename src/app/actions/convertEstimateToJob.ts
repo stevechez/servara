@@ -25,9 +25,9 @@ export async function convertEstimateToJob(customerId: string, aiData: any) {
     return { success: false };
   }
 
-  revalidatePath(`/customers/${customerId}`);
-  revalidatePath('/calendar');
-  revalidatePath('/'); // Update Dashboard stats
+  revalidatePath(`/dashboard/customers/${customerId}`);
+  revalidatePath('/dashboard/calendar');
+  revalidatePath('/dashboard'); // Update Dashboard stats
   
   return { success: true };
 }

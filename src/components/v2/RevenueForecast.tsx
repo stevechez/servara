@@ -1,6 +1,7 @@
 'use client';
 
-import { TrendingUp, DollarSign, Calendar, Target, CheckCircle } from 'lucide-react';
+import { TrendingDown, DollarSign, Calendar, Target, CheckCircle } from 'lucide-react';
+import EmptyState from '../EmptyState';
 
 interface ForecastProps {
   earned?: number;    // Changed to optional
@@ -21,7 +22,13 @@ export default function RevenueForecast({
 
   return (
     <div className="bg-white border border-slate-200 rounded-[32px] p-8 shadow-sm">
-      {/* ... header code ... */}
+     <EmptyState 
+  icon={<TrendingDown size={28} />}
+  title="No Revenue Yet"
+  description="Once you complete a job and send an invoice, your financial projections will appear here."
+/>
+
+ {/* ... header code ... */}
 
       {/* Progress Bar Stack */}
       <div className="relative h-4 w-full bg-slate-100 rounded-full overflow-hidden mb-8">

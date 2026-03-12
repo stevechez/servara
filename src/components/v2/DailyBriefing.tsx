@@ -1,20 +1,36 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, Calendar, ArrowRight } from 'lucide-react';
+import { Sparkles, TrendingUp, Calendar, ArrowRight, CalendarX2 } from 'lucide-react';
+import EmptyState from '@/components/EmptyState';
 
 // 1. Define the interface for TypeScript
 interface DailyBriefingProps {
   jobs: any[];
 }
 
-export default function DailyBriefing({ jobs }: DailyBriefingProps) {
-  const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+export default function DailyBriefing({ jobs }: { jobs: any[] }) {
+    const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   // 2. Derive real stats from the jobs prop to make it "Live"
   const completedToday = jobs.filter(j => j.status === 'completed').length;
   const pendingToday = jobs.filter(j => j.status === 'scheduled' || j.status === 'next').length;
 
+if (!jobs || jobs.length === 0) {
+    return (
+      <div className="h-full">
+        <EmptyState 
+          icon={<CalendarX2 size={28} strokeWidth={1.5} />}
+          title="No jobs scheduled today"
+          description="Your day is wide open. Take a breather, or hit the streets and do some local marketing!"
+          actionLabel="+ Add New Job"
+          onAction={() => document.getElementById('new-job-modal-trigger')?.click()} // Or however you open your modal
+        />
+      </div>
+    );
+  }
+
+  // 2. IF JOBS EXIST: Show your normal UI
   return (
     <div className="bg-white dark:bg-[#0B0E14] border border-slate-200 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-sm">
       {/* HEADER */}

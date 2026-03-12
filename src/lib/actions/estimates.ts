@@ -82,9 +82,9 @@ export async function createEstimateFromLead(formData: FormData) {
   // 5. UPDATE LEAD STATUS & CLEANUP
   await supabaseAdmin.from('leads').update({ status: 'converted' }).eq('id', leadId)
   
-  revalidatePath('/leads')
-  revalidatePath('/estimates')
+  revalidatePath('/dashboard/leads')
+  revalidatePath('/dashboard/estimates')
   
   // 6. SUCCESS REDIRECT
-  redirect(`/estimates/${estimate.id}`)
+  redirect(`/dashboard/estimates/${estimate.id}`)
 }

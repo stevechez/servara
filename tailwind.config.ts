@@ -9,6 +9,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      boxShadow: {
+        'soft': '0 4px 40px -2px rgba(0, 0, 0, 0.04)',
+        'float': '0 10px 50px -5px rgba(0, 0, 0, 0.08)',
+        'glow': '0 0 20px rgba(59, 130, 246, 0.15)', // Blue glow for active states
+      },
       colors: {
         // You can add custom brand colors here later if you want!
       },

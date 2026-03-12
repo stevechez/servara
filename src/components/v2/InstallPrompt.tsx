@@ -11,7 +11,7 @@ export default function InstallPrompt() {
     // Only show on iOS browsers, not already installed
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    
+
     if (isIOS && !isStandalone) {
       const hasDismissed = localStorage.getItem('hideInstallPrompt');
       if (!hasDismissed) setShow(true);
@@ -22,23 +22,24 @@ export default function InstallPrompt() {
 
   return (
     <AnimatePresence>
-      <motion.div 
+      <motion.div
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         exit={{ y: 100 }}
-        className="fixed bottom-24 left-6 right-6 z-[100] bg-slate-900 text-white p-6 rounded-[2rem] shadow-2xl border border-white/10"
+        className="fixed right-6 bottom-24 left-6 z-[100] rounded-[2rem] border border-white/10 bg-slate-900 p-6 text-white shadow-2xl"
       >
         <button onClick={() => setShow(false)} className="absolute top-4 right-4 text-slate-500">
           <X size={18} />
         </button>
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 bg-blue-600 rounded-2xl flex items-center justify-center shrink-0">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600">
             <PlusSquare size={24} />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-black">Install Servara App</p>
-            <p className="text-xs text-slate-400 font-medium">
-              Tap <Share size={14} className="inline mx-1" /> then <strong className="text-white">"Add to Home Screen"</strong> for a native experience.
+            <p className="text-sm font-black">Install Zidro App</p>
+            <p className="text-xs font-medium text-slate-400">
+              Tap <Share size={14} className="mx-1 inline" /> then{' '}
+              <strong className="text-white">"Add to Home Screen"</strong> for a native experience.
             </p>
           </div>
         </div>

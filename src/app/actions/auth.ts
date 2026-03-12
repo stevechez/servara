@@ -25,6 +25,9 @@ export async function login(formData: FormData) {
 
 export async function signOut() {
   const supabase = await createClient();
+  
+  // Just kill the session, don't try to redirect from the server
   await supabase.auth.signOut();
-  redirect('/');
+  
+  return { success: true };
 }

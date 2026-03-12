@@ -4,13 +4,14 @@ import { useState, useRef, useEffect } from 'react';
 import { Bell, Search, User, Settings, CreditCard, LogOut } from 'lucide-react';
 import ThemeToggle from '@/components/v2/ThemeToggle';
 import Link from 'next/link';
-// If you have a dedicated signout action, you can import it here
-import { useRouter } from 'next/navigation';
+import router from 'next/router';
+
+// 1. FIX: Added curly braces for a named import
+import { signOut } from '@/lib/actions/auth';
 
 export default function DashboardHeader() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   // Close dropdown when clicking anywhere else on the screen
   useEffect(() => {
@@ -23,25 +24,27 @@ export default function DashboardHeader() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // 2. FIX: Wired this handler to actually call the Supabase action
   const handleLogout = async () => {
-    // You can wire this up to your actual Supabase signout logic later
-    console.log("Logging out...");
+    // 1. Tell the server to kill the Supabase session
+    await signOut();
+
+    // 2. Teleport the user from the client side!
     router.push('/login');
   };
 
   return (
-    <header className="h-20 px-6 lg:px-10 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-[#12161D] flex items-center justify-between sticky top-0 z-40">
-      
+    <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 bg-white px-6 lg:px-10 dark:border-white/5 dark:bg-[#12161D]">
       {/* LEFT SIDE: Global Search */}
-      <div className="flex items-center gap-4 flex-1">
-        <div className="hidden md:flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-[#0B0E14] rounded-2xl border border-slate-200 dark:border-white/5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all w-72 lg:w-96">
+      <div className="flex flex-1 items-center gap-4">
+        <div className="hidden w-72 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 md:flex lg:w-96 dark:border-white/5 dark:bg-[#0B0E14]">
           <Search size={16} className="text-slate-400" />
-          <input 
-            type="text" 
-            placeholder="Search customers, jobs, or invoices..." 
-            className="bg-transparent border-none outline-none text-sm w-full text-slate-900 dark:text-white placeholder:text-slate-400" 
+          <input
+            type="text"
+            placeholder="Search customers, jobs, or invoices..."
+            className="w-full border-none bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
           />
-          <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-[#12161D] border border-slate-200 dark:border-white/10 text-[10px] font-bold text-slate-400">
+          <kbd className="hidden items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-400 lg:inline-flex dark:border-white/10 dark:bg-[#12161D]">
             ⌘K
           </kbd>
         </div>
@@ -49,65 +52,78 @@ export default function DashboardHeader() {
 
       {/* RIGHT SIDE: Utilities */}
       <div className="flex items-center gap-3 md:gap-5">
-        
         <ThemeToggle />
-        
-        <button className="relative p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors rounded-xl hover:bg-slate-50 dark:hover:bg-white/5" aria-label="Notifications">
+
+        <button
+          className="relative rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white"
+          aria-label="Notifications"
+        >
           <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full border-2 border-white dark:border-[#12161D]"></span>
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full border-2 border-white bg-blue-500 dark:border-[#12161D]"></span>
         </button>
 
-        <div className="hidden md:block w-px h-6 bg-slate-200 dark:bg-white/10 mx-2"></div>
+        <div className="mx-2 hidden h-6 w-px bg-slate-200 md:block dark:bg-white/10"></div>
 
         {/* PROFILE DROPDOWN WRAPPER */}
         <div className="relative" ref={dropdownRef}>
-          <button 
+          <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-3 group outline-none"
+            className="group flex items-center gap-3 outline-none"
           >
-            <div className="text-right hidden md:block">
-              <p className="text-sm font-bold text-slate-900 dark:text-white leading-none group-hover:text-blue-600 transition-colors">Admin</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Workspace</p>
+            <div className="hidden text-right md:block">
+              <p className="text-sm leading-none font-bold text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white">
+                Admin
+              </p>
+              <p className="mt-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                Workspace
+              </p>
             </div>
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-sm font-black text-white shadow-lg shadow-blue-500/20 transition-transform group-hover:scale-105">
               JS
             </div>
           </button>
 
           {/* THE DROPDOWN MENU */}
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-[#12161D] border border-slate-200 dark:border-white/5 rounded-2xl shadow-xl py-2 z-50 overflow-hidden origin-top-right animate-in fade-in slide-in-from-top-2 duration-200">
-              
-              <div className="px-4 py-3 border-b border-slate-100 dark:border-white/5 mb-1">
+            <div className="animate-in fade-in slide-in-from-top-2 absolute right-0 z-50 mt-3 w-56 origin-top-right overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 shadow-xl duration-200 dark:border-white/5 dark:bg-[#12161D]">
+              <div className="mb-1 border-b border-slate-100 px-4 py-3 dark:border-white/5">
                 <p className="text-sm font-bold text-slate-900 dark:text-white">Admin User</p>
-                <p className="text-xs font-medium text-slate-500 truncate">admin@servarapro.com</p>
+                <p className="truncate text-xs font-medium text-slate-500">admin@Zidropro.com</p>
               </div>
 
-              <div className="px-2 space-y-1">
-                <Link href="/dashboard/settings" className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors">
+              <div className="space-y-1 px-2">
+                <Link
+                  href="/dashboard/settings"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white"
+                >
                   <User size={16} /> My Account
                 </Link>
-                <Link href="/dashboard/settings" className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors">
+                <Link
+                  href="/dashboard/settings"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white"
+                >
                   <Settings size={16} /> Preferences
                 </Link>
-                <Link href="/dashboard/settings" className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors">
+                <Link
+                  href="/dashboard/settings"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white"
+                >
                   <CreditCard size={16} /> Billing
                 </Link>
               </div>
 
-              <div className="px-2 mt-1 pt-1 border-t border-slate-100 dark:border-white/5">
-                <button 
+              <div className="mt-1 border-t border-slate-100 px-2 pt-1 dark:border-white/5">
+                {/* 3. FIX: Changed onClick to trigger handleLogout */}
+                <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
                 >
                   <LogOut size={16} /> Log Out
                 </button>
               </div>
-
             </div>
           )}
         </div>
-
       </div>
     </header>
   );

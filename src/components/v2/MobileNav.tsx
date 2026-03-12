@@ -7,9 +7,9 @@ import NewJobModal from './NewJobModal';
 
 const navItems = [
   { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Schedule', href: '/schedule', icon: Calendar },
-  { name: 'Leads', href: '/leads', icon: Target },
-  { name: 'Clients', href: '/customers', icon: Users },
+  { name: 'Schedule', href: '/dashboard/schedule', icon: Calendar },
+  { name: 'Leads', href: '/dashboard/leads', icon: Target },
+  { name: 'Clients', href: '/dashboard/customers', icon: Users },
 ];
 
 export default function MobileNav() {

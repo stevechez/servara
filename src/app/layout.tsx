@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Figtree } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from '@/components/v2/ThemeProvider';
+import { cn } from "@/lib/utils";
+
+const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", figtree.variable)}>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {/* ThemeProvider wraps everything so Dark Mode works globally */}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>

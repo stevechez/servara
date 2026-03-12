@@ -81,24 +81,24 @@ export default async function DashboardPage() {
         
       </div>
 
-      {/* 3. KPI SCORECARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 3. KPI SCORECARDS (Wrapper is now just a grid) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
          <StatCard title="Collected" value={collectedRevenue} icon={<DollarSign size={18}/>} color="green" isCurrency />
          <StatCard title="Outstanding" value={outstandingRevenue} icon={<AlertCircle size={18}/>} color="red" isCurrency />
          <StatCard title="Win Rate" value={`${winRate}%`} icon={<TrendingUp size={18}/>} color="blue" />
          <StatCard title="Active Jobs" value={activeJobsCount} icon={<Briefcase size={18}/>} color="amber" />
       </div>
 
-      {/* 4. OPERATIONAL TOOLS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* 4. OPERATIONAL TOOLS (Wrapper is now just a grid) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <MissedCallInbox />
         <QuickQuote />
         <MagicSetup />
       </div>
 
       {/* 5. MASTER CALENDAR */}
-      <div className="bg-white dark:bg-[#0B0E14] border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm p-8">
-        <h2 className="text-lg font-black tracking-tight uppercase mb-8 dark:text-white">Master Schedule</h2>
+      <div className="bg-white dark:bg-[#0B0E14] border border-slate-200 dark:border-white/5 rounded-[2.5rem] shadow-soft transition-all hover:shadow-float p-6 md:p-8">
+        <h2 className="text-lg font-black tracking-tight uppercase mb-8 dark:text-white pl-2">Master Schedule</h2>
         <JobCalendar jobs={formattedJobs} />
       </div>
     </div>
@@ -114,7 +114,8 @@ function StatCard({ title, value, icon, color, isCurrency }: any) {
   }
   
   return (
-    <div className="bg-white dark:bg-[#0B0E14] border border-slate-200 dark:border-slate-800 p-6 rounded-[2rem] shadow-sm">
+    // THE FIX: Added shadow-soft, hover:shadow-float, and transition-all here!
+    <div className="bg-white dark:bg-[#0B0E14] border border-slate-200 dark:border-white/5 p-6 rounded-[2rem] shadow-soft transition-all duration-300 hover:shadow-float hover:-translate-y-1">
       <div className="flex items-center gap-3 mb-4">
         <div className={`p-2 rounded-xl ${colors[color]}`}>{icon}</div>
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</h3>

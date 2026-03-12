@@ -22,6 +22,6 @@ export async function createCustomer(formData: FormData) {
 
 	if (error) throw new Error(error.message);
 
-	revalidatePath('/customers');
+	revalidatePath('/dashboard/customers');
 	return data;
 }
