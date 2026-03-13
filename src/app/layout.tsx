@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google'; // Or whatever font you were using
 import { Toaster } from 'sonner';
 import './globals.css';
+import { ThemeProvider } from '@/components/v2/ThemeProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -13,9 +14,11 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="antialiased">
+    <html lang="en" className="antialiased" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen bg-white dark:bg-[#0B0E14]`}>
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
         <Toaster expand={false} richColors />
       </body>
     </html>

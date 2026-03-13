@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import CustomersEmptyState from './CustomersEmptyState';
 import { Plus, Users, Search } from 'lucide-react';
+import CustomerListClient from '@/components/v2/CustomerListClient';
 
 export default async function CustomersPage() {
   const supabase = await createClient();
@@ -57,6 +58,7 @@ export default async function CustomersPage() {
         <div className="grid grid-cols-1 gap-4">
           {/* Mapping actual customer rows would go here */}
           <p className="text-slate-500">Managing {customers.length} customers...</p>
+          <CustomerListClient customers={customers || []} />
         </div>
       )}
     </div>

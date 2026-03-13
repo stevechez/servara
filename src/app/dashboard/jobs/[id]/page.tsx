@@ -20,14 +20,13 @@ import CompleteJobButton from '@/components/v2/CompleteJobButton';
 
 export default async function JobDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient();
-
+  const { id } = await params;
   // Fetch job with customer data joined
   const { data: job, error } = await supabase
     .from('jobs')
     .select('*, customers(*)')
-    .eq('id', params.id)
+    .eq('id', id)
     .single();
-
   if (error || !job) notFound();
 
   const scheduledDate = job.scheduled_at ? parseISO(job.scheduled_at) : null;

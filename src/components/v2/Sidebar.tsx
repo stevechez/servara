@@ -106,7 +106,7 @@ export default function Sidebar() {
       </div>
 
       {/* USER PROFILE & LOGOUT */}
-      <div className="m-4 flex items-center justify-between rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4">
+      {/* <div className="m-4 flex items-center justify-between rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-xs font-black text-white">
             A
@@ -128,7 +128,7 @@ export default function Sidebar() {
             <LogOut size={16} />
           </button>
         </form>
-      </div>
+      </div> */}
     </aside>
   );
 }

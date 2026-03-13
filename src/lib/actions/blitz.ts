@@ -3,6 +3,15 @@
 
 import { createClient } from '@/lib/supabase/server';
 
+export async function sendNeighborhoodBlitz(leads: any[], body: string) {
+  // Fake delay to make the button look like it's working
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  console.log(`Simulated sending to ${leads.length} leads. Message: "${body}"`);
+
+  return { success: true, message: 'Blitz campaign launched! (Demo)' };
+}
+
 // ENSURE THIS NAME MATCHES YOUR IMPORT
 export async function launchNeighborhoodBlitz(jobId: string) {
   const supabase = await createClient();

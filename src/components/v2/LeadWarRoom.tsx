@@ -76,7 +76,10 @@ export default function LeadWarRoom({ leads }: { leads: Lead[] }) {
                         : 'bg-blue-600 shadow-blue-600/20'
                     }`}
                   >
-                    <span className="font-black uppercase italic">{lead.name[0]}</span>
+                    {/* Replace line 79 with this */}
+                    <span className="font-black uppercase italic">
+                      {lead.name?.charAt(0) || 'U'}
+                    </span>
                   </div>
                   <div>
                     <div className="flex items-center gap-2">

@@ -11,6 +11,7 @@ import {
 import NotificationBell from '@/components/v2/NotificationBell';
 
 // Components
+import DemoSeedButton from '@/components/v2/DemoSeedButton';
 import RevenueChart from '@/components/v2/RevenueChart';
 import NewCustomerSlideover from '@/components/v2/NewCustomerSlideover';
 import NeighborhoodBlitz from '@/components/v2/NeighborhoodBlitz';
@@ -28,19 +29,29 @@ export const revalidate = 0;
 export default async function DashboardHomePage() {
   const supabase = await createClient();
 
-  // 1. DATA FETCHING
-  const [leadsRes, jobsRes, activeRes, completedRes] = await Promise.all([
-    supabase.from('leads').select('*').order('created_at', { ascending: false }),
-    supabase.from('jobs').select('*, customers(name)'),
-    supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'scheduled'),
-    supabase.from('jobs').select('id').eq('status', 'completed'),
-  ]);
+  // 1. DATA FETCHING & ASSIGNMENT
+  const { data: leadsDataTemp } = await supabase
+    .from('leads')
+    .select('*')
+    .order('created_at', { ascending: false });
 
-  // 2. DATA ASSIGNMENT
-  const allJobsData = jobsRes.data || [];
-  const leadsData = leadsRes.data || [];
-  const activeCount = activeRes.count || 0;
-  const completedJobsCount = completedRes.data?.length || 0;
+  const { data: jobsDataTemp } = await supabase.from('jobs').select('*, customers(name)');
+
+  const { count: activeCountTemp } = await supabase
+    .from('jobs')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'scheduled');
+
+  const { data: completedJobsTemp } = await supabase
+    .from('jobs')
+    .select('id')
+    .eq('status', 'completed');
+
+  // 2. SAFE FALLBACKS (This replaces your old Assignment block)
+  const leadsData = leadsDataTemp || [];
+  const allJobsData = jobsDataTemp || [];
+  const activeCount = activeCountTemp || 0;
+  const completedJobsCount = completedJobsTemp?.length || 0;
   const recentLeads = leadsData.slice(0, 5);
 
   // 3. CALCULATIONS (THE BRAIN)
@@ -67,6 +78,10 @@ export default async function DashboardHomePage() {
               <span className="text-[9px] font-black tracking-widest text-emerald-500 uppercase">
                 AI Dispatch Active
               </span>
+              <div className="flex items-center gap-4">
+                <DemoSeedButton /> {/* <-- PUT THE MAGIC BUTTON HERE */}
+                {/* Your Profile/Theme toggles */}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-4">

@@ -109,6 +109,7 @@ export default function SignupPage() {
               <input
                 required
                 type="password"
+                name="password"
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

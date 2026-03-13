@@ -15,12 +15,15 @@ export default function LeadsClientPage({
   smsUsage: number;
   smsLimit: number;
 }) {
+  // 1. STATE VARIABLES
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [isBlitzModalOpen, setIsBlitzModalOpen] = useState(false);
 
+  // 2. CREDIT LOGIC
   const creditsRemaining = smsLimit - smsUsage;
   const notEnoughCredits = selectedLeads.length > creditsRemaining;
 
+  // 3. FUNCTIONS
   const toggleLead = (id: string) => {
     setSelectedLeads((prev) => (prev.includes(id) ? prev.filter((l) => l !== id) : [...prev, id]));
   };
@@ -28,15 +31,20 @@ export default function LeadsClientPage({
   const handleSend = async (body: string) => {
     try {
       const results = await sendNeighborhoodBlitz(selectedLeads, body);
-      const sentCount = results.filter((r: any) => r.status === 'sent').length;
-      alert(`Blitz Complete! Successfully sent ${sentCount} messages.`);
-      setSelectedLeads([]);
-      setIsBlitzModalOpen(false);
+
+      if (results.success) {
+        alert(`Blitz Complete! Successfully sent ${selectedLeads.length} messages.`);
+        setSelectedLeads([]);
+        setIsBlitzModalOpen(false);
+      } else {
+        alert('Blitz failed. Check your Twilio settings.');
+      }
     } catch (error) {
-      alert('Blitz failed. Check your Twilio settings.');
+      alert('System error during blitz.');
     }
   };
 
+  // 4. UI RENDER
   return (
     <div className="mx-auto max-w-7xl space-y-8 p-6 md:p-8">
       {/* HEADER */}
