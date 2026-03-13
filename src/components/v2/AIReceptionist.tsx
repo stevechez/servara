@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Bot, User, MessageSquare } from 'lucide-react';
+import { Conversation } from '@/types';
 
 interface AIReceptionistProps {
   conversations: Conversation[];

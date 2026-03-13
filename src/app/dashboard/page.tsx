@@ -1,7 +1,17 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { DollarSign, Briefcase, Users, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
+import {
+  DollarSign,
+  Briefcase,
+  Users,
+  Calendar as CalendarIcon,
+  TrendingUp,
+  Plus,
+} from 'lucide-react';
+import NotificationBell from '@/components/v2/NotificationBell';
 
+// Components
+import RevenueChart from '@/components/v2/RevenueChart';
 import NewCustomerSlideover from '@/components/v2/NewCustomerSlideover';
 import NeighborhoodBlitz from '@/components/v2/NeighborhoodBlitz';
 import JobCalendar from '@/components/JobCalendar';
@@ -11,6 +21,7 @@ import QuickQuote from '@/components/v2/QuickQuote';
 import ActivityFeed from '@/components/v2/ActivityFeed';
 import ConflictResolver from '@/components/v2/ConflictResolver';
 import QuickAddJob from '@/components/v2/QuickAddJob';
+import LeadWarRoom from '@/components/v2/LeadWarRoom';
 
 export const revalidate = 0;
 
@@ -18,23 +29,23 @@ export default async function DashboardHomePage() {
   const supabase = await createClient();
 
   // 1. DATA FETCHING
-  const [leadsRes, invoicesRes, jobsRes, activeRes] = await Promise.all([
-    supabase.from('leads').select('*'),
-    supabase.from('invoices').select('amount, status'),
+  const [leadsRes, jobsRes, activeRes, completedRes] = await Promise.all([
+    supabase.from('leads').select('*').order('created_at', { ascending: false }),
     supabase.from('jobs').select('*, customers(name)'),
     supabase.from('jobs').select('*', { count: 'exact', head: true }).eq('status', 'scheduled'),
+    supabase.from('jobs').select('id').eq('status', 'completed'),
   ]);
 
+  // 2. DATA ASSIGNMENT
   const allJobsData = jobsRes.data || [];
   const leadsData = leadsRes.data || [];
   const activeCount = activeRes.count || 0;
+  const completedJobsCount = completedRes.data?.length || 0;
+  const recentLeads = leadsData.slice(0, 5);
 
-  // 2. CALCULATIONS
-  const collectedRevenue =
-    invoicesRes.data
-      ?.filter((inv) => inv.status === 'paid')
-      .reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0) || 0;
-
+  // 3. CALCULATIONS (THE BRAIN)
+  const collectedRevenue = completedJobsCount * 1250;
+  const pendingRevenue = leadsData.filter((l) => l.status === 'new').length * 1250;
   const totalLeads = leadsData.length;
   const convertedCount = leadsData.filter((l) => l.status === 'converted').length;
   const winRate = totalLeads > 0 ? Math.round((convertedCount / totalLeads) * 100) : 0;
@@ -42,22 +53,29 @@ export default async function DashboardHomePage() {
   return (
     <div className="min-h-screen w-full bg-slate-50 pb-24 md:pb-10 dark:bg-[#0B0E14]">
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        {/* 1. HEADER */}
+        {/* HEADER */}
         <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <div>
-            <h1 className="text-3xl font-black uppercase italic md:text-4xl dark:text-white">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl leading-none font-black uppercase italic md:text-4xl dark:text-white">
               Command Center
             </h1>
-            <p className="mt-1 text-[10px] font-bold tracking-[0.3em] text-slate-400 uppercase">
-              Operations & AI Dispatch
-            </p>
+            <div className="mt-1 flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+              </span>
+              <span className="text-[9px] font-black tracking-widest text-emerald-500 uppercase">
+                AI Dispatch Active
+              </span>
+            </div>
           </div>
-          <div className="w-full md:w-auto">
+          <div className="flex items-center gap-4">
+            <NotificationBell />
             <QuickAddJob />
           </div>
         </div>
 
-        {/* 2. METRICS */}
+        {/* METRICS */}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-6">
           <MetricCard
             title="Revenue"
@@ -80,58 +98,88 @@ export default async function DashboardHomePage() {
           <MetricCard title="Leads" value={totalLeads} icon={<Users size={16} />} color="slate" />
         </div>
 
-        {/* 3. MAIN CONTENT GRID */}
+        {/* PIPELINE & CHART SECTION */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <LeadWarRoom leads={recentLeads} />
+          </div>
+          <div className="lg:col-span-1">
+            <RevenueChart collected={collectedRevenue} pending={pendingRevenue} />
+          </div>
+        </div>
+
+        {/* MAIN CONTENT GRID */}
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3 lg:gap-8">
           <div className="space-y-6 lg:col-span-2">
+            {/* QUICK ACTIONS */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <NewCustomerSlideover />
               <Link
-                href="/dashboard/jobs"
-                className="shadow-soft group flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-5 transition-all hover:border-indigo-500 dark:border-white/5 dark:bg-[#12161D]"
+                href="/dashboard/jobs/new"
+                className="group flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-5 transition-all hover:border-indigo-50 dark:border-white/5 dark:bg-[#12161D]"
               >
                 <div className="rounded-2xl bg-indigo-600 p-3 text-white">
-                  <CalendarIcon size={20} />
+                  <Plus size={20} />
                 </div>
                 <span className="font-black tracking-tight text-slate-900 uppercase dark:text-white">
-                  Schedule Job
+                  New Job
                 </span>
               </Link>
             </div>
 
-            <ConflictResolver jobs={allJobsData} />
-
-            <div className="shadow-float rounded-[2.5rem] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-[#12161D]">
-              <h2 className="mb-4 text-[10px] font-black tracking-widest text-slate-400 uppercase italic">
-                Master Schedule
-              </h2>
-              <div className="scrollbar-hide overflow-x-auto">
-                <div className="min-w-[800px] lg:min-w-full">
-                  <JobCalendar jobs={allJobsData} />
-                </div>
+            {/* SCHEDULE */}
+            <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-[#12161D]">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-[10px] font-black tracking-widest text-slate-400 uppercase italic">
+                  Master Schedule
+                </h2>
+                {allJobsData.length > 0 && (
+                  <Link
+                    href="/dashboard/jobs"
+                    className="text-[10px] font-bold text-blue-600 uppercase"
+                  >
+                    View All &rarr;
+                  </Link>
+                )}
               </div>
+              {allJobsData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <CalendarIcon size={32} className="mb-4 text-slate-300" />
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Your schedule is clear
+                  </h3>
+                </div>
+              ) : (
+                <JobCalendar jobs={allJobsData} />
+              )}
             </div>
+
+            <ConflictResolver jobs={allJobsData} />
           </div>
 
           <div className="space-y-6">
             <MissedCallInbox />
-            <ActivityFeed jobs={allJobsData} leads={leadsData} />
+            <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-[#12161D]">
+              <h2 className="mb-6 text-[10px] font-black tracking-widest text-slate-400 uppercase italic">
+                Recent Activity
+              </h2>
+              <ActivityFeed jobs={allJobsData} leads={leadsData} />
+            </div>
           </div>
         </div>
 
-        {/* 4. BOTTOM TOOLS */}
+        {/* BOTTOM TOOLS */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <NeighborhoodBlitz />
           <QuickQuote />
-          <div className="md:col-span-2 lg:col-span-1">
-            <MagicSetup />
-          </div>
+          <MagicSetup />
         </div>
       </div>
     </div>
   );
 }
 
-// Helper Metric Card Component
+// Sub-component
 function MetricCard({
   title,
   value,
@@ -143,15 +191,18 @@ function MetricCard({
   icon: any;
   color: string;
 }) {
+  const colorMap: Record<string, string> = {
+    emerald: 'bg-emerald-500/10 text-emerald-500',
+    blue: 'bg-blue-500/10 text-blue-500',
+    indigo: 'bg-indigo-500/10 text-indigo-500',
+    slate: 'bg-slate-500/10 text-slate-500',
+  };
+
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 dark:border-white/5 dark:bg-[#12161D]">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-[9px] font-black tracking-widest text-slate-400 uppercase">{title}</h3>
-        <div
-          className={`rounded-xl bg-${color === 'emerald' ? 'emerald' : color === 'blue' ? 'blue' : color === 'indigo' ? 'indigo' : 'slate'}-500/10 p-2 text-${color === 'emerald' ? 'emerald' : color === 'blue' ? 'blue' : color === 'indigo' ? 'indigo' : 'slate'}-500`}
-        >
-          {icon}
-        </div>
+        <div className={`rounded-xl p-2 ${colorMap[color]}`}>{icon}</div>
       </div>
       <p className="text-xl font-black md:text-2xl dark:text-white">{value}</p>
     </div>

@@ -1,40 +1,28 @@
-// src/lib/actions/settings.ts
-'use server'
+'use server';
 
-import { createClient } from '@supabase/supabase-js'
-import { revalidatePath } from 'next/cache'
+import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 
-export async function updateCompanySettings(formData: FormData) {
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+export async function updateProfile(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const id = formData.get('id') as string
-  const name = formData.get('name') as string
-  const email = formData.get('email') as string
-  const phone = formData.get('phone') as string
-  const address = formData.get('address') as string
+  if (!user) throw new Error('Not authenticated');
 
-  if (!id) throw new Error("Missing company ID")
+  // UPSERT: Update if exists, Insert if missing
+  const { error } = await supabase.from('profiles').upsert({
+    id: user.id,
+    full_name: formData.get('fullName'),
+    business_name: formData.get('businessName'),
+    updated_at: new Date().toISOString(),
+  });
 
-  // Update the master company record
-  const { error } = await supabaseAdmin
-    .from('companies')
-    .update({ 
-      name, 
-      email, 
-      phone, 
-      address, 
-      updated_at: new Date().toISOString() 
-    })
-    .eq('id', id)
+  if (error) throw new Error(error.message);
 
-  if (error) {
-    console.error("SETTINGS UPDATE ERROR:", error.message)
-    throw new Error(`Failed to update settings: ${error.message}`)
-  }
+  // Instantly update the Header with the new data
+  revalidatePath('/', 'layout');
 
-  // Refresh the page to show the new saved data
-  revalidatePath('/settings')
+  return { success: true };
 }

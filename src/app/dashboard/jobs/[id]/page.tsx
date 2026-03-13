@@ -1,164 +1,169 @@
 import { createClient } from '@/lib/supabase/server';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { revalidatePath } from 'next/cache';
-import { generateInvoiceFromJob } from '@/lib/actions/invoices';
-import ReportDownloader from '@/components/v2/ReportDownloader';
-import { ArrowLeft, Receipt, Briefcase, Calendar, MapPin, CheckCircle2, Clock } from 'lucide-react';
-import NeighborhoodBlitzCard from '@/components/v2/NeighborhoodBlitzCard';
+import {
+  Calendar,
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  ChevronLeft,
+  Briefcase,
+  FileText,
+  CheckCircle,
+  CheckCircle2,
+  TrendingUp,
+  Star,
+} from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import CompleteJobButton from '@/components/v2/CompleteJobButton';
 
-export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function JobDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient();
-  const { id: jobId } = await params;
 
-  // 1. Fetch Job + Customer + Reports
+  // Fetch job with customer data joined
   const { data: job, error } = await supabase
     .from('jobs')
-    .select(`
-      *,
-      customers (*),
-      job_reports (*)
-    `)
-    .eq('id', jobId)
+    .select('*, customers(*)')
+    .eq('id', params.id)
     .single();
 
-  if (error || !job) {
-    return <div className="p-20 text-center font-black text-red-500">Job not found.</div>;
-  }
+  if (error || !job) notFound();
 
-  // Handle array vs object for customer relationship
-  const customer = Array.isArray(job.customers) ? job.customers[0] : job.customers;
-  const report = job.job_reports?.[0];
-
-  // Bulletproof Inline Server Action
-  async function handleGenerateInvoice() {
-    'use server';
-    await generateInvoiceFromJob(job.id);
-    revalidatePath(`/dashboard/jobs/${job.id}`);
-  }
+  const scheduledDate = job.scheduled_at ? parseISO(job.scheduled_at) : null;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20">
-      
-      {/* 1. HEADER & NAVIGATION */}
-      <div>
-        <Link href="/dashboard" className="text-xs font-black uppercase tracking-widest text-slate-400 hover:text-blue-600 flex items-center gap-2 mb-4 transition-colors">
-          <ArrowLeft size={14} /> Back to Dispatch
-        </Link>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* 1. BACK BUTTON & HEADER */}
+      <Link
+        href="/dashboard"
+        className="mb-6 flex items-center gap-2 text-xs font-bold tracking-widest text-slate-400 uppercase transition-colors hover:text-blue-600"
+      >
+        <ChevronLeft size={14} /> Back to Command Center
+      </Link>
+
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-black uppercase italic dark:text-white">
               {job.service_type || 'General Service'}
-              <span className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-xl ${
-                job.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400' :
-                job.status === 'invoiced' ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400' :
-                'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
-              }`}>
-                {job.status?.replace('_', ' ') || 'Scheduled'}
-              </span>
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium mt-1">Work Order #{job.id.split('-')[0].toUpperCase()}</p>
+            <span className="rounded-full bg-blue-500/10 px-3 py-1 text-[10px] font-black text-blue-600 uppercase">
+              {job.status}
+            </span>
           </div>
+          <p className="mt-2 font-medium text-slate-500">
+            Job ID: #{job.id.toString().substring(0, 8)}
+          </p>
         </div>
+
+        <CompleteJobButton jobId={job.id} isCompleted={job.status === 'completed'} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 mt-4 lg:mt-8">
-        
-        {/* LEFT COLUMN: Job & Customer Context */}
-        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-          
-          {/* Photos & PDF Report Section */}
-          <div className="bg-white dark:bg-[#12161D] border border-slate-200 dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">Service Report</h2>
-              {/* PDF DOWNLOAD BUTTON LIVE HERE */}
-              {report && (
-                <div className="shrink-0">
-                  <ReportDownloader customer={customer} job={job} />
-                </div>
-              )}
-            </div>
+      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-3">
+        {/* LEFT COLUMN: Job Details */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* DESCRIPTION CARD */}
+          <div className="rounded-[2.5rem] border border-slate-200 bg-white p-8 dark:border-white/5 dark:bg-[#12161D]">
+            <h2 className="mb-4 flex items-center gap-2 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+              <FileText size={14} /> Job Description
+            </h2>
+            <p className="text-lg leading-relaxed text-slate-700 dark:text-slate-300">
+              {job.description || 'No notes provided for this job.'}
+            </p>
+          </div>
 
-            {report ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Before</p>
-                  <div className="aspect-square rounded-2xl overflow-hidden border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5">
-                    <img src={report.before_photo_url} className="w-full h-full object-cover" alt="Before" />
-                  </div>
+          {/* REPUTATION MANAGEMENT SECTION */}
+          {job.status === 'completed' && (
+            <div className="rounded-[2.5rem] border border-blue-100 bg-blue-50/50 p-8 dark:border-blue-500/10 dark:bg-blue-500/5">
+              <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="mb-2 flex items-center gap-2 text-[10px] font-black tracking-widest text-blue-600 uppercase">
+                    <Star size={14} fill="currentColor" /> Reputation Growth
+                  </h2>
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                    Job finished! Send a 5-star review request to {job.customers?.name}.
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">After</p>
-                  <div className="aspect-square rounded-2xl overflow-hidden border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5">
-                    <img src={report.after_photo_url} className="w-full h-full object-cover" alt="After" />
+
+                {job.review_request_sent ? (
+                  <div className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 px-6 py-3 text-[10px] font-black text-emerald-600 uppercase">
+                    <CheckCircle2 size={16} /> Request Sent
                   </div>
-                </div>
+                ) : (
+                  <button className="flex items-center gap-2 rounded-2xl bg-blue-600 px-8 py-4 text-[10px] font-black tracking-widest text-white uppercase shadow-xl shadow-blue-600/20 transition-all hover:bg-blue-700 active:scale-95">
+                    Send Review SMS
+                  </button>
+                )}
               </div>
-            ) : (
-              <div className="py-12 text-center border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl bg-slate-50 dark:bg-white/5">
-                <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">No photos uploaded for this job yet.</p>
-              </div>
-            )}
+            </div>
+          )}
+
+          {/* ACTIVITY / TIMELINE */}
+          <div className="rounded-[2.5rem] border border-slate-100 bg-slate-50/50 p-8 dark:border-white/5 dark:bg-white/5">
+            <h2 className="mb-4 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+              Activity Log
+            </h2>
+            <div className="flex items-center gap-4 border-l-2 border-blue-500/20 pl-6">
+              <div className="-ml-[1.55rem] h-2 w-2 rounded-full bg-blue-500" />
+              <p className="text-xs font-bold text-slate-500">
+                Job created and scheduled for{' '}
+                {scheduledDate ? format(scheduledDate, 'PPPP') : 'unscheduled'}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: The Financial Engine */}
-        <div className="space-y-4 lg:space-y-6">
-          <NeighborhoodBlitzCard jobId={job.id} />
-          
-          {/* Customer Quick Info */}
-          <div className="bg-white dark:bg-[#12161D] border border-slate-200 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Customer Info</h3>
-            <Link href={`/dashboard/customers/${customer.id}`} className="font-bold text-lg text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors block mb-4">
-              {customer?.name}
-            </Link>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
-                <MapPin size={16} className="text-slate-400" /> {customer?.address || 'No address'}
+        {/* RIGHT COLUMN: Customer & Logistics */}
+        <div className="space-y-6">
+          <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-[#12161D]">
+            <h2 className="mb-6 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+              Customer Info
+            </h2>
+            <div className="space-y-5">
+              <div className="flex items-center gap-4">
+                <div className="rounded-xl bg-blue-500/10 p-2 text-blue-600">
+                  <Briefcase size={18} />
+                </div>
+                <p className="font-black dark:text-white">{job.customers?.name}</p>
               </div>
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
-                <Calendar size={16} className="text-slate-400" /> {new Date(job.scheduled_at).toLocaleDateString()}
+              <div className="flex items-center gap-4">
+                <div className="rounded-xl bg-slate-500/10 p-2 text-slate-400">
+                  <Phone size={18} />
+                </div>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  {job.customers?.phone}
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="rounded-xl bg-slate-500/10 p-2 text-slate-400">
+                  <MapPin size={18} />
+                </div>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  {job.customers?.address}
+                </p>
               </div>
             </div>
-            
-            <Link 
-              href={`/portal/${customer.id}`} 
-              target="_blank"
-              className="mt-6 w-full py-3 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 font-black text-xs uppercase tracking-widest text-center block hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-            >
-              View Client Portal
-            </Link>
           </div>
 
-          {/* INVOICE ACTION CARD */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2rem] p-6 text-white shadow-xl shadow-blue-500/20">
-             <div className="flex items-center gap-3 mb-2">
-               <Receipt className="text-blue-200" size={24} />
-               <h3 className="text-xl font-black tracking-tight">Billing</h3>
-             </div>
-             
-             {job.status === 'invoiced' ? (
-               <div className="mt-6">
-                 <div className="flex items-center justify-center gap-2 py-4 bg-white/10 rounded-xl border border-white/20 font-black text-sm uppercase tracking-widest text-green-300">
-                   <CheckCircle2 size={18} /> Invoice Sent
-                 </div>
-               </div>
-             ) : (
-               <>
-                 <p className="text-blue-100 text-sm font-medium mt-2 mb-6 leading-relaxed">
-                   Job is marked complete. Generate the invoice to collect payment from the customer.
-                 </p>
-                 <form action={handleGenerateInvoice}>
-                   <button 
-                     type="submit"
-                     className="w-full py-4 bg-white text-blue-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-lg"
-                   >
-                     Generate Invoice
-                   </button>
-                 </form>
-               </>
-             )}
+          <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-white/5 dark:bg-[#12161D]">
+            <h2 className="mb-6 text-[10px] font-black tracking-widest text-slate-400 uppercase">
+              Schedule
+            </h2>
+            <div className="flex items-center gap-4">
+              <div className="rounded-xl bg-indigo-500/10 p-2 text-indigo-500">
+                <Clock size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-black dark:text-white">
+                  {scheduledDate ? format(scheduledDate, 'h:mm a') : 'TBD'}
+                </p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">
+                  {scheduledDate ? format(scheduledDate, 'EEEE, MMM do') : 'Date Unset'}
+                </p>
+              </div>
+            </div>
           </div>
-
         </div>
       </div>
     </div>

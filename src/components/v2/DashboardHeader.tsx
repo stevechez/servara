@@ -2,18 +2,34 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Bell, Search, User, Settings, CreditCard, LogOut } from 'lucide-react';
-import ThemeToggle from '@/components/v2/ThemeToggle';
 import Link from 'next/link';
-import router from 'next/router';
+import { useRouter } from 'next/navigation';
 
-// 1. FIX: Added curly braces for a named import
 import { signOut } from '@/lib/actions/auth';
 
-export default function DashboardHeader() {
+interface HeaderProps {
+  fullName?: string;
+  email?: string;
+  avatarUrl?: string | null;
+}
+
+export default function DashboardHeader({
+  fullName = 'Admin User',
+  email = 'admin@zidropro.com',
+  avatarUrl = null,
+}: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
-  // Close dropdown when clicking anywhere else on the screen
+  const firstName = fullName.split(' ')[0];
+  const initials = fullName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -24,18 +40,13 @@ export default function DashboardHeader() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 2. FIX: Wired this handler to actually call the Supabase action
   const handleLogout = async () => {
-    // 1. Tell the server to kill the Supabase session
     await signOut();
-
-    // 2. Teleport the user from the client side!
     router.push('/login');
   };
 
   return (
     <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-slate-200 bg-white px-6 lg:px-10 dark:border-white/5 dark:bg-[#12161D]">
-      {/* LEFT SIDE: Global Search */}
       <div className="flex flex-1 items-center gap-4">
         <div className="hidden w-72 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 md:flex lg:w-96 dark:border-white/5 dark:bg-[#0B0E14]">
           <Search size={16} className="text-slate-400" />
@@ -50,10 +61,7 @@ export default function DashboardHeader() {
         </div>
       </div>
 
-      {/* RIGHT SIDE: Utilities */}
       <div className="flex items-center gap-3 md:gap-5">
-        <ThemeToggle />
-
         <button
           className="relative rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-white/5 dark:hover:text-white"
           aria-label="Notifications"
@@ -64,7 +72,6 @@ export default function DashboardHeader() {
 
         <div className="mx-2 hidden h-6 w-px bg-slate-200 md:block dark:bg-white/10"></div>
 
-        {/* PROFILE DROPDOWN WRAPPER */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -72,23 +79,27 @@ export default function DashboardHeader() {
           >
             <div className="hidden text-right md:block">
               <p className="text-sm leading-none font-bold text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white">
-                Admin
+                {firstName}
               </p>
               <p className="mt-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
                 Workspace
               </p>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-sm font-black text-white shadow-lg shadow-blue-500/20 transition-transform group-hover:scale-105">
-              JS
+
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-sm font-black text-white shadow-lg shadow-blue-500/20 transition-transform group-hover:scale-105">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={fullName} className="h-full w-full object-cover" />
+              ) : (
+                initials
+              )}
             </div>
           </button>
 
-          {/* THE DROPDOWN MENU */}
           {isDropdownOpen && (
             <div className="animate-in fade-in slide-in-from-top-2 absolute right-0 z-50 mt-3 w-56 origin-top-right overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 shadow-xl duration-200 dark:border-white/5 dark:bg-[#12161D]">
               <div className="mb-1 border-b border-slate-100 px-4 py-3 dark:border-white/5">
-                <p className="text-sm font-bold text-slate-900 dark:text-white">Admin User</p>
-                <p className="truncate text-xs font-medium text-slate-500">admin@Zidropro.com</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{fullName}</p>
+                <p className="truncate text-xs font-medium text-slate-500">{email}</p>
               </div>
 
               <div className="space-y-1 px-2">
@@ -113,7 +124,6 @@ export default function DashboardHeader() {
               </div>
 
               <div className="mt-1 border-t border-slate-100 px-2 pt-1 dark:border-white/5">
-                {/* 3. FIX: Changed onClick to trigger handleLogout */}
                 <button
                   onClick={handleLogout}
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"

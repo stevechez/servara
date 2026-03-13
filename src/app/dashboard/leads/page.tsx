@@ -1,64 +1,46 @@
 import { createClient } from '@/lib/supabase/server';
-import LeadsListClient from '@/components/v2/LeadsListClient';
-import { Clock, CheckCircle, Zap } from 'lucide-react';
-
-export const revalidate = 0;
+import LeadsEmptyState from './LeadsEmptyState';
+import { Plus } from 'lucide-react';
 
 export default async function LeadsPage() {
   const supabase = await createClient();
-  
+
+  // Fetch real leads
   const { data: leads } = await supabase
     .from('leads')
     .select('*')
     .order('created_at', { ascending: false });
 
-  const safeLeads = leads || [];
-
-  // KPI Calculations (Now crash-proof!)
-  const newToday = safeLeads.filter(l => {
-    const today = new Date().toISOString().split('T')[0];
-    // The '?.' ensures it won't crash if created_at is null
-    return l.created_at?.startsWith(today);
-  }).length;
-
-  const conversionRate = safeLeads.length > 0 
-    ? Math.round((safeLeads.filter(l => l.status === 'converted').length / safeLeads.length) * 100) 
-    : 0;
+  const hasLeads = leads && leads.length > 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      
-      {/* KPI STATS ROW */}
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 mt-4 lg:mt-8">        <StatCard title="Active Pipeline" value={safeLeads.length} icon={<Zap size={18}/>} color="blue" />
-        <StatCard title="New Today" value={newToday} icon={<Clock size={18}/>} color="amber" subtitle="Requires follow-up" />
-        <StatCard title="Win Rate" value={`${conversionRate}%`} icon={<CheckCircle size={18}/>} color="green" subtitle="Historical average" />
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Page Header */}
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-black uppercase italic dark:text-white">Leads Pipeline</h1>
+          <p className="text-xs font-bold tracking-widest text-slate-500 uppercase">
+            Incoming Opportunities
+          </p>
+        </div>
+
+        {hasLeads && (
+          <button className="flex items-center gap-2 rounded-2xl bg-blue-600 px-6 py-3 text-sm font-black text-white shadow-xl shadow-blue-600/20 transition-all hover:bg-blue-700">
+            <Plus size={18} />
+            ADD NEW LEAD
+          </button>
+        )}
       </div>
 
-      {/* THE INTERACTIVE CLIENT COMPONENT */}
-     {/* <div className="w-full overflow-x-auto pb-4">
-  <div className="min-w-[800px]"> {/* Forces the table to stay wide, but lets the user swipe it */}
-    {/* <LeadsListClient leads={safeLeads} /> */}
-  {/* </div> */}
-{/* </div> */}
+      {/* Conditional Rendering */}
+      {!hasLeads ? (
+        <LeadsEmptyState />
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {/* We will build the actual Kanban board here later */}
+          <p className="dark:text-white">Displaying {leads.length} leads...</p>
+        </div>
+      )}
     </div>
   );
-}
-
-// Helper component for the Stats
-function StatCard({ title, value, icon, color, subtitle }: any) {
-  const colors: any = {
-    blue: "bg-blue-50 text-blue-600",
-    amber: "bg-amber-50 text-amber-600",
-    green: "bg-green-50 text-green-600",
-  }
-  return (
-    <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-      <div className="flex items-center gap-3 mb-3">
-        <div className={`p-2 rounded-xl ${colors[color]}`}>{icon}</div>
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</h3>
-      </div>
-      <p className="text-2xl font-black text-slate-900">{value}</p>
-      {subtitle && <p className="text-[10px] text-slate-400 font-medium mt-1">{subtitle}</p>}
-    </div>
-  )
 }

@@ -1,122 +1,135 @@
-// app/(dashboard)/leads/[id]/page.tsx
-import { createClient } from '@/lib/supabase/server'
-import { createEstimateFromLead } from '@/lib/actions/estimates'
-import { Phone, Mail, MapPin, User, ArrowRight, FileText } from 'lucide-react'
-import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import {
+  ArrowLeft,
+  Phone,
+  Mail,
+  User,
+  Wrench,
+  Calendar,
+  CheckCircle,
+  Briefcase,
+} from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { convertToJob } from '@/lib/actions/leads';
+import { createClient } from '@/lib/supabase/server';
 
-export default async function LeadDetailPage({ params }: { params: { id: string } }) {
-  const supabase = await createClient()
+export default async function LeadDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  // 1. Await params (Next.js 15 requirement)
+  const { id } = await params;
 
-  const { data: lead } = await supabase
-    .from('leads')
-    .select('*')
-    .eq('id', params.id)
-    .single()
+  // 2. Fetch the lead securely
+  const supabase = await createClient();
+  const { data: lead, error } = await supabase.from('leads').select('*').eq('id', id).single();
 
-  if (!lead) return notFound()
+  if (error || !lead) {
+    notFound();
+  }
+
+  // Bind the specific lead ID to the server action
+  const convertAction = convertToJob.bind(null, lead.id);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Breadcrumbs */}
-      <nav className="text-sm text-gray-500">
-        <Link href="/dashboard/leads" className="hover:text-blue-600">Leads</Link> / <span>{lead.name}</span>
-      </nav>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* LEFT COLUMN: Lead Info */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white border rounded-xl p-6 shadow-sm">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-blue-100 p-3 rounded-full text-blue-600">
-                <User size={24} />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{lead.name}</h1>
-                <span className="text-xs font-bold uppercase px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
-                  {lead.status}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-4 text-sm">
-              <div className="flex items-center gap-3 text-gray-600">
-                <Phone size={16} className="text-gray-400" />
-                <a href={`tel:${lead.phone}`} className="hover:text-blue-600 font-medium">
-                  {lead.phone}
-                </a>
-              </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <Mail size={16} className="text-gray-400" />
-                <a href={`mailto:${lead.email}`} className="hover:text-blue-600">
-                  {lead.email}
-                </a>
-              </div>
-              <div className="flex items-start gap-3 text-gray-600">
-                <MapPin size={16} className="text-gray-400 mt-1" />
-                <span>{lead.address || 'No address provided'}</span>
-              </div>
-            </div>
+    <div className="mx-auto max-w-4xl space-y-8 p-6 md:p-8">
+      {/* Back Button */}
+      <Link
+        href="/dashboard/leads"
+        className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition-colors hover:text-slate-900"
+      >
+        <ArrowLeft size={16} /> Back to Pipeline
+      </Link>
+      {/* Header Section */}
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <div className="mb-2 flex items-center gap-3">
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">{lead.name}</h1>
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold tracking-wider text-blue-600 uppercase">
+              {lead.status}
+            </span>
           </div>
-
-          <div className="bg-gray-50 border border-dashed rounded-xl p-6">
-            <h3 className="text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">Service Requested</h3>
-            <p className="text-gray-600 italic">"{lead.service_requested || 'General inquiry'}"</p>
-          </div>
+          <p className="flex items-center gap-2 text-slate-500">
+            <Calendar size={14} /> Added {new Date(lead.created_at).toLocaleDateString()}
+          </p>
         </div>
 
-        {/* RIGHT COLUMN: Conversion Form */}
-        <div className="lg:col-span-2">
-          <div className="bg-white border rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b bg-gray-50/50">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <FileText size={20} className="text-blue-600" />
-                Convert to Estimate
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Creating an estimate will automatically turn this lead into a permanent Customer.
-              </p>
+        {/* The Money Button */}
+        {lead.status !== 'converted' ? (
+          <form action={convertAction}>
+            <button
+              type="submit"
+              className="flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-bold text-white shadow-lg shadow-green-600/20 transition-all hover:-translate-y-0.5 hover:bg-green-700"
+            >
+              <Briefcase size={18} />
+              Convert to Job
+            </button>
+          </form>
+        ) : (
+          <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-6 py-3 font-bold text-slate-400">
+            <CheckCircle size={18} />
+            Already Converted
+          </div>
+        )}
+      </div>{' '}
+      {/* <-- THE FIX: This closing div was missing! */}
+      {/* Info Grid */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Contact Info Card */}
+        <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-sm font-bold tracking-widest text-slate-400 uppercase">
+            Contact Information
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-slate-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50">
+                <User size={18} className="text-slate-500" />
+              </div>
+              <div className="font-medium">{lead.name}</div>
             </div>
 
-            {/* Find the form on your Lead Detail page */}
-<form action={createEstimateFromLead} className="p-6 space-y-4">
-  {/* The "Anchor": This links the form to the specific lead */}
-  <input type="hidden" name="lead_id" value={lead.id} />
+            {lead.phone && (
+              <div className="flex items-center gap-3 text-slate-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50">
+                  <Phone size={18} className="text-slate-500" />
+                </div>
+                <div className="font-medium">{lead.phone}</div>
+              </div>
+            )}
 
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div className="space-y-1">
-      <label className="text-sm font-bold text-gray-700">Estimate Amount ($)</label>
-      <input 
-        name="amount" 
-        type="number" 
-        step="0.01"
-        required 
-        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
-    <div className="space-y-1">
-      <label className="text-sm font-bold text-gray-700">Job Address</label>
-      <input 
-        name="address" 
-        type="text" 
-        defaultValue={lead.address}
-        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-      />
-    </div>
-  </div>
-
-  <button 
-    type="submit" 
-    className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700"
-  >
-    Generate Estimate
-  </button>
-</form>
+            {lead.email && (
+              <div className="flex items-center gap-3 text-slate-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50">
+                  <Mail size={18} className="text-slate-500" />
+                </div>
+                <div className="font-medium">{lead.email}</div>
+              </div>
+            )}
           </div>
-        </div>
+        </Card>
 
+        {/* Project Details Card */}
+        <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-sm font-bold tracking-widest text-slate-400 uppercase">
+            Project Details
+          </h2>
+          <div className="space-y-4">
+            {lead.service_requested ? (
+              <div className="flex items-start gap-3 text-slate-700">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50">
+                  <Wrench size={18} className="text-blue-600" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-400">Requested Service</div>
+                  <div className="mt-1 font-medium">{lead.service_requested}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-slate-400 italic">
+                No specific service requested yet.
+              </div>
+            )}
+          </div>
+        </Card>
       </div>
     </div>
-  )
+  );
 }
