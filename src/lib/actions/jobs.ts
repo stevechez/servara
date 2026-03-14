@@ -1,48 +1,59 @@
-'use server';
-
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
-export async function addLineItem(jobId: string, formData: FormData) {
+export async function approveEstimateAndCreateJob(estimateId: string, formData?: FormData) {
   const supabase = await createClient();
 
-  const description = formData.get('description') as string;
-  const quantity = parseFloat(formData.get('quantity') as string);
-  const unit_price = parseFloat(formData.get('unit_price') as string);
+  // 1. Grab the form data
+  const scheduledAt = formData?.get('scheduled_at') as string;
+  const notes = formData?.get('notes') as string;
 
-  // 1. Insert the new line item
-  const { error: insertError } = await supabase.from('line_items').insert([
+  // 2. Fetch the original estimate to get customer info and amount
+  const { data: estimate, error: fetchError } = await supabase
+    .from('estimates')
+    .select('*')
+    .eq('id', estimateId)
+    .single();
+
+  if (fetchError || !estimate) throw new Error('Estimate not found');
+
+  // 3. Create the Job
+  const { error: jobError } = await supabase.from('jobs').insert([
     {
-      job_id: jobId,
-      description,
-      quantity,
-      unit_price,
+      customer_id: estimate.customer_id,
+      service_type: estimate.service_type,
+      amount: estimate.amount,
+      status: 'scheduled',
+      scheduled_at: scheduledAt || null,
+      notes: notes || '',
     },
   ]);
 
-  if (insertError) {
-    throw new Error(`Failed to add item: ${insertError.message}`);
-  }
+  if (jobError) throw new Error(`Job creation failed: ${jobError.message}`);
 
-  // 2. Recalculate the Job's total amount
-  const { data: items } = await supabase
-    .from('line_items')
-    .select('quantity, unit_price')
-    .eq('job_id', jobId);
+  // 4. Update the Estimate status
+  await supabase.from('estimates').update({ status: 'approved' }).eq('id', estimateId);
 
-  const newTotal = items?.reduce((sum, item) => sum + item.quantity * item.unit_price, 0) || 0;
+  // 5. Cleanup and Redirect
+  revalidatePath('/dashboard/jobs');
+  revalidatePath('/dashboard');
+  redirect('/dashboard/jobs');
+}
 
-  // 3. Update the Job with the new total
-  const { error: updateError } = await supabase
+export async function completeJobAction(jobId: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase
     .from('jobs')
-    .update({ amount: newTotal })
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+    })
     .eq('id', jobId);
 
-  // WE ADDED THIS: Now it will yell at us if it fails!
-  if (updateError) {
-    throw new Error(`Failed to update job total: ${updateError.message}`);
-  }
+  if (error) throw new Error(error.message);
 
-  // 4. Refresh the page to show the new data instantly
-  revalidatePath(`/dashboard/jobs/${jobId}`);
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/jobs');
 }

@@ -12,7 +12,7 @@ import {
   LogOut,
   ExternalLink,
   BookOpen,
-  Receipt, // <-- Combined imports
+  Receipt,
 } from 'lucide-react';
 
 const navItems = [
@@ -20,11 +20,19 @@ const navItems = [
   { name: 'Leads Pipeline', href: '/dashboard/leads', icon: Zap },
   { name: 'Customers & Jobs', href: '/dashboard/customers', icon: Users },
   { name: 'Service Catalog', href: '/dashboard/catalog', icon: BookOpen },
-  { name: 'Invoices', href: '/dashboard/invoice', icon: Receipt }, // <-- Properly added to list
+  { name: 'Invoices', href: '/dashboard/invoice', icon: Receipt },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+
+  // 1. Move the function HERE (inside the component, before the return)
+  const handleOpenPortal = () => {
+    // Note: Since we are in the sidebar, we don't have a specific "job.id"
+    // Usually, you'd open a general portal or a specific one from a Job Page.
+    // For now, let's just make it go to the portal root for the demo.
+    window.open('/portal', '_blank');
+  };
 
   return (
     <aside className="flex min-h-screen w-64 flex-col border-r border-slate-800 bg-slate-900 transition-all">
@@ -48,7 +56,6 @@ export default function Sidebar() {
         </p>
 
         {navItems.map((item) => {
-          // Robust path matching
           const isActive =
             item.href === '/dashboard'
               ? pathname === '/dashboard'
@@ -82,14 +89,13 @@ export default function Sidebar() {
 
       {/* BOTTOM ACTION / SETTINGS */}
       <div className="space-y-1 border-t border-slate-800/50 p-4">
+        {/* 2. THE PORTAL BUTTON (Cleaned up) */}
         <button
-          onClick={() => alert('Portal Link Copied!')}
-          className="group flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-bold text-slate-400 transition-all hover:bg-slate-800 hover:text-white"
+          onClick={handleOpenPortal}
+          className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-slate-400 transition-all hover:bg-slate-800 hover:text-white"
         >
-          <span className="flex items-center gap-3 text-left">
-            <ExternalLink size={18} className="text-slate-500 group-hover:text-white" />
-            Client Portal
-          </span>
+          <ExternalLink size={18} className="text-slate-500 group-hover:text-blue-400" />
+          Live Portal View
         </button>
 
         <Link
@@ -103,32 +109,18 @@ export default function Sidebar() {
           <Settings size={18} className="text-slate-500 group-hover:text-white" />
           Settings
         </Link>
-      </div>
 
-      {/* USER PROFILE & LOGOUT */}
-      {/* <div className="m-4 flex items-center justify-between rounded-2xl border border-slate-700/50 bg-slate-800/50 p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-xs font-black text-white">
-            A
-          </div>
-          <div>
-            <p className="text-xs leading-none font-bold text-white uppercase italic">Admin</p>
-            <p className="mt-1 text-[9px] font-black tracking-tighter text-slate-500 uppercase">
-              Owner
-            </p>
-          </div>
-        </div>
-
-        <form action={signOut}>
+        {/* 3. LOGOUT FORM (Keep it simple) */}
+        <form action={signOut} className="mt-2">
           <button
             type="submit"
-            title="Sign Out"
-            className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-900 hover:text-red-400"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-slate-400 transition-all hover:bg-red-500/10 hover:text-red-400"
           >
-            <LogOut size={16} />
+            <LogOut size={18} />
+            Sign Out
           </button>
         </form>
-      </div> */}
+      </div>
     </aside>
   );
 }

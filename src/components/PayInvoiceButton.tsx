@@ -1,45 +1,19 @@
 // src/components/PayInvoiceButton.tsx
-'use client'
-
-import { useState } from 'react'
-import { CreditCard } from 'lucide-react'
-import { createCheckoutSession } from '@/lib/actions/stripe'
-
-interface PayButtonProps {
-  invoiceId: string
-  amount: string
-  jobTitle: string
-}
-
-export default function PayInvoiceButton({ invoiceId, amount, jobTitle }: PayButtonProps) {
-  const [isRedirecting, setIsRedirecting] = useState(false)
-
-  const handlePayment = async () => {
-    setIsRedirecting(true)
-    
-    const formData = new FormData()
-    formData.append('invoiceId', invoiceId)
-    formData.append('amount', amount)
-    formData.append('jobTitle', jobTitle)
-
-    try {
-      // This will trigger the server-side redirect to Stripe
-      await createCheckoutSession(formData)
-    } catch (error) {
-      console.error(error)
-      alert("Failed to initiate payment.")
-      setIsRedirecting(false)
-    }
-  }
+import { createCheckoutSession } from '@/lib/actions/stripe';
+import { CreditCard } from 'lucide-react';
+export default function PayInvoiceButton({ invoiceId }: { invoiceId: string }) {
+  // This "pre-loads" the function with the ID so it's ready for the form action
+  const handlePay = createCheckoutSession.bind(null, invoiceId);
 
   return (
-    <button 
-      onClick={handlePayment}
-      disabled={isRedirecting}
-      className="px-6 py-3 bg-gray-900 text-white rounded-xl text-sm font-bold hover:bg-gray-800 transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 w-full sm:w-auto"
-    >
-      <CreditCard size={18} /> 
-      {isRedirecting ? 'Connecting to Stripe...' : 'Pay with Card'}
-    </button>
-  )
+    <form action={handlePay}>
+      <button
+        type="submit"
+        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 font-bold text-white shadow-md transition-all hover:bg-indigo-700 active:scale-95"
+      >
+        <CreditCard size={18} />
+        Pay Invoice
+      </button>
+    </form>
+  );
 }

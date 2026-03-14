@@ -61,7 +61,7 @@ export default function LandingPage() {
               <Zap size={22} className="text-white" fill="currentColor" />
             </div>
 
-            <span className="text-2xl font-black tracking-tighter uppercase italic">
+            <span className="text-4xl font-black tracking-normal uppercase italic">
               ZIDRO<span className="text-blue-600">PRO</span>
             </span>
           </div>

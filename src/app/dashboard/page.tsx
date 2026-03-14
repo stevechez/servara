@@ -9,8 +9,6 @@ import {
   Plus,
 } from 'lucide-react';
 import NotificationBell from '@/components/v2/NotificationBell';
-
-// Components
 import DemoSeedButton from '@/components/v2/DemoSeedButton';
 import RevenueChart from '@/components/v2/RevenueChart';
 import NewCustomerSlideover from '@/components/v2/NewCustomerSlideover';
@@ -19,8 +17,6 @@ import JobCalendar from '@/components/JobCalendar';
 import MissedCallInbox from '@/components/v2/MissedCallInbox';
 import MagicSetup from '@/components/v2/MagicSetup';
 import QuickQuote from '@/components/v2/QuickQuote';
-import ActivityFeed from '@/components/v2/ActivityFeed';
-import ConflictResolver from '@/components/v2/ConflictResolver';
 import QuickAddJob from '@/components/v2/QuickAddJob';
 import LeadWarRoom from '@/components/v2/LeadWarRoom';
 
@@ -29,32 +25,26 @@ export const revalidate = 0;
 export default async function DashboardHomePage() {
   const supabase = await createClient();
 
-  // 1. DATA FETCHING & ASSIGNMENT
-  const { data: leadsDataTemp } = await supabase
-    .from('leads')
-    .select('*')
-    .order('created_at', { ascending: false });
-
+  // 1. FETCH ALL NECESSARY DATA
+  const { data: leadsDataTemp } = await supabase.from('leads').select('*');
   const { data: jobsDataTemp } = await supabase.from('jobs').select('*, customers(name)');
-
   const { count: activeCountTemp } = await supabase
     .from('jobs')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'scheduled');
-
   const { data: completedJobsTemp } = await supabase
     .from('jobs')
     .select('id')
     .eq('status', 'completed');
 
-  // 2. SAFE FALLBACKS (This replaces your old Assignment block)
+  // 2. SAFE FALLBACKS
   const leadsData = leadsDataTemp || [];
   const allJobsData = jobsDataTemp || [];
   const activeCount = activeCountTemp || 0;
   const completedJobsCount = completedJobsTemp?.length || 0;
   const recentLeads = leadsData.slice(0, 5);
 
-  // 3. CALCULATIONS (THE BRAIN)
+  // 3. CALCULATIONS
   const collectedRevenue = completedJobsCount * 1250;
   const pendingRevenue = leadsData.filter((l) => l.status === 'new').length * 1250;
   const totalLeads = leadsData.length;
@@ -67,7 +57,7 @@ export default async function DashboardHomePage() {
         {/* HEADER */}
         <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div className="flex items-center gap-4">
-            <h1 className="text-3xl leading-none font-black uppercase italic md:text-4xl dark:text-white">
+            <h1 className="text-3xl font-black uppercase italic md:text-4xl dark:text-white">
               Command Center
             </h1>
             <div className="mt-1 flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1">
@@ -78,13 +68,10 @@ export default async function DashboardHomePage() {
               <span className="text-[9px] font-black tracking-widest text-emerald-500 uppercase">
                 AI Dispatch Active
               </span>
-              <div className="flex items-center gap-4">
-                <DemoSeedButton /> {/* <-- PUT THE MAGIC BUTTON HERE */}
-                {/* Your Profile/Theme toggles */}
-              </div>
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <DemoSeedButton />
             <NotificationBell />
             <QuickAddJob />
           </div>
@@ -113,7 +100,7 @@ export default async function DashboardHomePage() {
           <MetricCard title="Leads" value={totalLeads} icon={<Users size={16} />} color="slate" />
         </div>
 
-        {/* PIPELINE & CHART SECTION */}
+        {/* PIPELINE & CHART */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <LeadWarRoom leads={recentLeads} />
@@ -126,7 +113,6 @@ export default async function DashboardHomePage() {
         {/* MAIN CONTENT GRID */}
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3 lg:gap-8">
           <div className="space-y-6 lg:col-span-2">
-            {/* QUICK ACTIONS */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <NewCustomerSlideover />
               <Link
@@ -142,21 +128,10 @@ export default async function DashboardHomePage() {
               </Link>
             </div>
 
-            {/* SCHEDULE */}
             <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-[#12161D]">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-[10px] font-black tracking-widest text-slate-400 uppercase italic">
-                  Master Schedule
-                </h2>
-                {allJobsData.length > 0 && (
-                  <Link
-                    href="/dashboard/jobs"
-                    className="text-[10px] font-bold text-blue-600 uppercase"
-                  >
-                    View All &rarr;
-                  </Link>
-                )}
-              </div>
+              <h2 className="mb-6 text-[10px] font-black tracking-widest text-slate-400 uppercase italic">
+                Master Schedule
+              </h2>
               {allJobsData.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <CalendarIcon size={32} className="mb-4 text-slate-300" />
@@ -168,18 +143,11 @@ export default async function DashboardHomePage() {
                 <JobCalendar jobs={allJobsData} />
               )}
             </div>
-
-            <ConflictResolver jobs={allJobsData} />
           </div>
 
           <div className="space-y-6">
             <MissedCallInbox />
-            <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 dark:border-white/10 dark:bg-[#12161D]">
-              <h2 className="mb-6 text-[10px] font-black tracking-widest text-slate-400 uppercase italic">
-                Recent Activity
-              </h2>
-              <ActivityFeed jobs={allJobsData} leads={leadsData} />
-            </div>
+            <MagicSetup />
           </div>
         </div>
 
@@ -187,14 +155,12 @@ export default async function DashboardHomePage() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <NeighborhoodBlitz />
           <QuickQuote />
-          <MagicSetup />
         </div>
       </div>
     </div>
   );
 }
 
-// Sub-component
 function MetricCard({
   title,
   value,

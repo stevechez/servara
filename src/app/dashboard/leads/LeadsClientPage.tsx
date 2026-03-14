@@ -30,6 +30,9 @@ export default function LeadsClientPage({
 
   const handleSend = async (body: string) => {
     try {
+      // Log for debugging
+      console.log('Sending blitz to:', selectedLeads);
+
       const results = await sendNeighborhoodBlitz(selectedLeads, body);
 
       if (results.success) {
@@ -40,6 +43,7 @@ export default function LeadsClientPage({
         alert('Blitz failed. Check your Twilio settings.');
       }
     } catch (error) {
+      console.error('Blitz Error:', error);
       alert('System error during blitz.');
     }
   };

@@ -1,51 +1,35 @@
+// src/app/actions/convertLead.ts
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { createClient } from '@/lib/supabase/server';
 
-export async function convertLeadToJob(leadId: string) {
+// THE FIX: Add ", formData?: FormData" to catch the second argument from LeadsListClient
+export async function convertLead(idOrFormData: string | FormData, formData?: FormData) {
+  return convertLeadToJob(idOrFormData, formData);
+}
+
+export async function convertLeadToJob(idOrFormData: string | FormData, formData?: FormData) {
   const supabase = await createClient();
 
-  // 1. Fetch the Lead
-  const { data: lead, error: leadError } = await supabase
-    .from('leads')
-    .select('*')
-    .eq('id', leadId)
-    .single();
+  const leadId =
+    typeof idOrFormData === 'string'
+      ? idOrFormData
+      : (idOrFormData.get('leadId') as string) || (idOrFormData.get('id') as string);
 
-  if (leadError || !lead) return { success: false, error: 'Lead not found' };
+  if (!leadId) {
+    return { success: false, error: 'No Lead ID provided' };
+  }
 
-  // 2. Create the Customer (Standard Apple-level CRM move)
-  const { data: customer, error: custError } = await supabase
-    .from('customers')
-    .insert([
-      {
-        name: lead.name,
-        email: lead.email,
-        phone: lead.phone,
-      },
-    ])
-    .select()
-    .single();
+  const { error } = await supabase.from('leads').update({ status: 'converted' }).eq('id', leadId);
 
-  if (custError) return { success: false, error: 'Customer creation failed' };
-
-  // 3. Create the Job (Value: $1,250)
-  const { error: jobError } = await supabase.from('jobs').insert([
-    {
-      customer_id: customer.id,
-      service_type: lead.service_type || 'New Service',
-      amount: 1250,
-      status: 'scheduled',
-      scheduled_at: new Date().toISOString(),
-    },
-  ]);
-
-  if (jobError) return { success: false, error: 'Job creation failed' };
-
-  // 4. Close the loop: Mark lead as converted
-  await supabase.from('leads').update({ status: 'converted' }).eq('id', leadId);
+  if (error) {
+    console.error('Failed to convert lead:', error);
+    return { success: false, error: 'Failed to update database' };
+  }
 
   revalidatePath('/dashboard');
+  revalidatePath('/dashboard/leads');
+
   return { success: true };
 }
