@@ -1,33 +1,28 @@
 import { createClient } from '@/lib/supabase/server';
 import JobsBoardClient from '@/components/v2/JobsBoardClient';
+import MasterSchedule from '@/components/MasterSchedule';
 
 export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export default async function JobsPage() {
   const supabase = await createClient();
-  
-  // Fetch jobs AND include the customer details in one query!
+
+  // 2. Fetch the jobs from your database
   const { data: jobs } = await supabase
     .from('jobs')
-    .select(`
-      *,
-      customers ( id, name, address, phone )
-    `)
-    .order('scheduled_at', { ascending: true });
+    .select('*')
+    .order('created_at', { ascending: false });
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-6">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Dispatch Board</h1>
-          <p className="text-slate-500 text-sm font-medium">Manage today's schedule and active jobs.</p>
-        </div>
-        {/* We can add a "Filter by Date" dropdown here later */}
+    <div className="mx-auto max-w-5xl p-6 md:p-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-black tracking-tight text-slate-900">Dispatch Board</h1>
+        <p className="text-slate-500">Manage today's schedule and active jobs.</p>
       </div>
 
-      {/* THE KANBAN BOARD */}
-      <JobsBoardClient jobs={jobs || []} />
+      {/* 3. Drop in your gorgeous new component! */}
+      <MasterSchedule jobs={jobs || []} />
     </div>
   );
 }

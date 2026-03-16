@@ -1,74 +1,72 @@
-'use client';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { Search, ArrowRight } from 'lucide-react';
 
-import { useState, useEffect, Suspense } from 'react'; // Added Suspense
-import { useSearchParams } from 'next/navigation';
-import { Wrench, ArrowRight, Search } from 'lucide-react';
-import Link from 'next/link';
+export const revalidate = 0; // Ensures we always grab a fresh ID
 
-function PortalContent() {
-  const searchParams = useSearchParams();
-  const [jobId, setJobId] = useState('');
+export default async function ClientPortalSearchPage() {
+  const supabase = await createClient();
 
-  // Automatically grab the ID from the URL on load
-  useEffect(() => {
-    const idFromUrl = searchParams.get('id');
-    if (idFromUrl) {
-      setJobId(idFromUrl);
+  // 1. Fetch exactly ONE working job ID for the demo hint
+  const { data: demoJob } = await supabase.from('jobs').select('id').limit(1).single();
+
+  // 2. Server Action to handle the form submission
+  async function handleSearch(formData: FormData) {
+    'use server';
+
+    // The input MUST have name="jobId" for this to work
+    const jobId = formData.get('jobId')?.toString().trim();
+
+    if (jobId) {
+      redirect(`/portal/${jobId}`);
     }
-  }, [searchParams]);
+  }
 
   return (
-    <div className="w-full max-w-md rounded-[2.5rem] border border-slate-100 bg-white p-10 shadow-xl shadow-slate-200/50">
-      <h1 className="mb-2 text-3xl font-black text-slate-900">Track Your Project</h1>
-      <p className="mb-8 font-medium text-slate-500">
-        Enter your Job ID to see live updates, photos, and invoices.
-      </p>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white p-4 dark:bg-[#0B0E14]">
+      {/* Main Card */}
+      <div className="w-full max-w-md">
+        <h1 className="mb-2 text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+          Track Your Project
+        </h1>
+        <p className="mb-8 text-sm font-medium text-slate-500 dark:text-slate-400">
+          Enter your Job ID to see live updates, photos, and invoices.
+        </p>
 
-      <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute top-1/2 left-4 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="e.g. #88241"
-            value={jobId}
-            onChange={(e) => setJobId(e.target.value)}
-            className="w-full truncate rounded-2xl border border-slate-200 py-4 pr-4 pl-12 text-sm font-bold transition-all outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <form action={handleSearch} className="flex flex-col gap-4">
+          <div className="relative">
+            <Search className="absolute top-1/2 left-4 -translate-y-1/2 text-slate-400" size={20} />
+            <input
+              type="text"
+              name="jobId" /* <-- THIS IS REQUIRED FOR THE BUTTON TO WORK */
+              required
+              placeholder="e.g. #88241"
+              className="w-full rounded-2xl border border-slate-200 bg-white py-4 pr-4 pl-12 text-sm font-bold text-slate-900 transition-all outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-white/10 dark:bg-white/5 dark:text-white"
+            />
+          </div>
 
-        <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 text-sm font-black tracking-widest text-white uppercase italic transition-all hover:bg-slate-800">
-          Find My Project <ArrowRight size={18} />
-        </button>
+          <button
+            type="submit"
+            className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0B1021] py-4 text-[12px] font-black tracking-widest text-white uppercase transition-all hover:bg-blue-600 active:scale-95 dark:bg-white dark:text-black dark:hover:bg-blue-500 dark:hover:text-white"
+          >
+            Find My Project
+            <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+          </button>
+        </form>
+
+        {/* BEAUTIFUL DEMO HELPER */}
+        {demoJob?.id && (
+          <div className="mt-8 flex flex-col items-center justify-center gap-2 rounded-2xl bg-slate-50 py-5 text-center dark:bg-white/5">
+            <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+              For Demo Purpose
+            </span>
+            {/* The 'select-all' class makes it copyable with a single click */}
+            <code className="rounded-lg bg-white px-3 py-2 font-mono text-xs font-bold text-blue-600 shadow-sm transition-colors select-all hover:bg-blue-50 dark:bg-black/50 dark:text-blue-400">
+              {demoJob.id}
+            </code>
+          </div>
+        )}
       </div>
-      {/* ... rest of footer remains same */}
-    </div>
-  );
-}
-
-// Wrap in Suspense because useSearchParams() requires it in Next.js Client Components
-export default function PortalLandingPage() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6">
-      <div className="mb-12 flex items-center gap-2 text-2xl font-black tracking-tight text-slate-900">
-        <div className="rounded-lg bg-blue-600 p-1.5 shadow-lg shadow-blue-600/20">
-          <Wrench className="text-white" size={24} />
-        </div>
-        Zidro <span className="text-blue-600 uppercase italic">PRO</span>
-        <span className="ml-2 font-medium text-slate-400">| Client Portal</span>
-      </div>
-
-      <Suspense
-        fallback={<div className="rounded-3xl bg-white p-10 shadow-xl">Loading Portal...</div>}
-      >
-        <PortalContent />
-      </Suspense>
-
-      <Link
-        href="/"
-        className="mt-8 text-sm font-bold text-slate-400 transition-colors hover:text-slate-600"
-      >
-        Back to ZidroPro.com
-      </Link>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { convertToJob } from '@/lib/actions/leads';
 import { createClient } from '@/lib/supabase/server';
+import ConvertLeadButton from '@/components/ConvertLeadButton';
 
 export default async function LeadDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   // 1. Await params (Next.js 15 requirement)
@@ -54,15 +55,7 @@ export default async function LeadDetailsPage({ params }: { params: Promise<{ id
 
         {/* The Money Button */}
         {lead.status !== 'converted' ? (
-          <form action={convertAction}>
-            <button
-              type="submit"
-              className="flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-bold text-white shadow-lg shadow-green-600/20 transition-all hover:-translate-y-0.5 hover:bg-green-700"
-            >
-              <Briefcase size={18} />
-              Convert to Job
-            </button>
-          </form>
+          <ConvertLeadButton leadId={lead.id} />
         ) : (
           <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-6 py-3 font-bold text-slate-400">
             <CheckCircle size={18} />

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { handleAuth } from '@/lib/actions/auth';
 import { Card } from '@/components/ui/card';
 import { Wrench, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -92,6 +93,7 @@ export default function LoginPage() {
               : 'Already have an account? Sign in'}
           </button>
         </div>
+        <Link href="/forgot-password">Forgot password?</Link>
       </Card>
     </div>
   );

@@ -104,19 +104,19 @@ export default function DashboardHeader({
 
               <div className="space-y-1 px-2">
                 <Link
-                  href="/dashboard/settings"
+                  href="/dashboard/account"
                   className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white"
                 >
                   <User size={16} /> My Account
                 </Link>
                 <Link
-                  href="/dashboard/settings"
+                  href="/dashboard/preferences"
                   className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white"
                 >
                   <Settings size={16} /> Preferences
                 </Link>
                 <Link
-                  href="/dashboard/settings"
+                  href="/dashboard/settings/billing"
                   className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white"
                 >
                   <CreditCard size={16} /> Billing

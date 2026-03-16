@@ -7,20 +7,17 @@ import { revalidatePath } from 'next/cache';
 export async function completeJob(jobId: string, customerId: string, formData: FormData) {
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from('jobs')
-    .update({ status: 'completed' })
-    .eq('id', jobId);
+  const { error } = await supabase.from('jobs').update({ status: 'completed' }).eq('id', jobId);
 
   if (error) {
-    console.error("Failed to complete job:", error);
+    console.error('Failed to complete job:', error);
     return; // 2. Return nothing instead of an error object
   }
 
   // Refresh the pages
   revalidatePath(`/dashboard/customers/${customerId}`);
-  revalidatePath('/dashboard'); 
-  
-  // Notice we removed `return { success: true }`. 
+  revalidatePath('/dashboard');
+
+  // Notice we removed `return { success: true }`.
   // This satisfies TypeScript's requirement for a Promise<void> return type.
 }

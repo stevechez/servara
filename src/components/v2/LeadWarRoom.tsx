@@ -1,3 +1,4 @@
+// src/components/v2/LeadWarRoom.tsx
 'use client';
 
 import { useState } from 'react';
@@ -5,31 +6,50 @@ import { motion } from 'framer-motion';
 import { UserPlus, Phone, Loader2, ArrowUpRight } from 'lucide-react';
 import { convertLeadToJob } from '@/app/actions/convertLead';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import confetti from 'canvas-confetti'; // Make sure you have this installed: npm i canvas-confetti @types/canvas-confetti
 
 interface Lead {
   id: string;
   name: string;
   service_type: string;
   email: string;
-  phone?: string; // Added phone to the interface for scoring
+  phone?: string;
   created_at: string;
   status: 'new' | 'contacted' | 'converted';
 }
 
 export default function LeadWarRoom({ leads }: { leads: Lead[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleConvert = async (id: string) => {
     setLoadingId(id);
     try {
       const result = await convertLeadToJob(id);
+
       if (result.success) {
-        toast.success('Lead converted to Job!');
+        // 1. Show success toast
+        toast.success('Lead converted to Job! Redirecting...');
+
+        // 2. Fire the confetti
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+
+        // 3. Wait 2 seconds for the celebration, then redirect to the Jobs/Customers page
+        setTimeout(() => {
+          router.push('/dashboard/jobs'); // NOTE: Change to '/dashboard/customers' if that's your route
+        }, 2000);
+      } else {
+        toast.error(result?.error || 'Failed to convert lead.');
+        setLoadingId(null); // Only clear loading if it failed, otherwise keep it spinning while redirecting
       }
     } catch (error) {
       console.error(error);
       toast.error('Conversion failed');
-    } finally {
       setLoadingId(null);
     }
   };
@@ -57,7 +77,6 @@ export default function LeadWarRoom({ leads }: { leads: Lead[] }) {
           </div>
         ) : (
           leads.map((lead, idx) => {
-            // LOGIC LIVES HERE - Inside the map, before the return
             const isHot = lead.phone && lead.service_type;
 
             return (
@@ -76,7 +95,6 @@ export default function LeadWarRoom({ leads }: { leads: Lead[] }) {
                         : 'bg-blue-600 shadow-blue-600/20'
                     }`}
                   >
-                    {/* Replace line 79 with this */}
                     <span className="font-black uppercase italic">
                       {lead.name?.charAt(0) || 'U'}
                     </span>

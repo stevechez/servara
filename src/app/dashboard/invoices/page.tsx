@@ -1,16 +1,28 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { FileText, ChevronRight, Receipt } from 'lucide-react';
+import { redirect } from 'next/navigation';
+
+export const revalidate = 0; // Kills the cache
 
 export default async function InvoiceHistoryPage() {
   const supabase = await createClient();
 
-  // Fetch all completed jobs to show as invoices
+  // 1. Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // 2. Fetch from the INVOICES table, locked to this user
   const { data: invoices } = await supabase
-    .from('jobs')
+    .from('invoices')
     .select('*, customers(name)')
-    .eq('status', 'completed')
-    .order('scheduled_at', { ascending: false });
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -28,7 +40,7 @@ export default async function InvoiceHistoryPage() {
         {invoices?.map((inv) => (
           <Link
             key={inv.id}
-            href={`/dashboard/invoice/${inv.id}`}
+            href={`/dashboard/invoices/${inv.id}`}
             className="group flex items-center justify-between rounded-3xl border border-slate-200 bg-white p-6 transition-all hover:border-blue-500/30 hover:shadow-xl dark:border-white/5 dark:bg-[#12161D]"
           >
             <div className="flex items-center gap-4">
@@ -39,14 +51,34 @@ export default async function InvoiceHistoryPage() {
                 <p className="font-black tracking-tight text-slate-900 uppercase dark:text-white">
                   {inv.customers?.name || 'Unknown Customer'}
                 </p>
-                <p className="text-[10px] font-bold tracking-widest text-slate-400 uppercase">
-                  INV-{inv.id.toString().substring(0, 8)} •{' '}
-                  {new Date(inv.scheduled_at).toLocaleDateString()}
-                </p>
+                <div className="flex items-center gap-2 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+                  <span>INV-{inv.id.toString().substring(0, 8)}</span>
+                  <span>•</span>
+                  <span>{new Date(inv.created_at).toLocaleDateString()}</span>
+                  <span>•</span>
+                  <span
+                    className={`${
+                      inv.status === 'paid'
+                        ? 'text-emerald-500'
+                        : inv.status === 'sent'
+                          ? 'text-blue-500'
+                          : 'text-slate-400'
+                    }`}
+                  >
+                    {inv.status}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm font-black text-slate-900 dark:text-white">$1,250.00</span>
+              {/* REAL AMOUNT FROM DATABASE */}
+              <span className="text-sm font-black text-slate-900 dark:text-white">
+                $
+                {inv.amount?.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }) || '0.00'}
+              </span>
               <ChevronRight
                 size={18}
                 className="text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-blue-500"

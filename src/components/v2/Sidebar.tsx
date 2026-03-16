@@ -20,7 +20,7 @@ const navItems = [
   { name: 'Leads Pipeline', href: '/dashboard/leads', icon: Zap },
   { name: 'Customers & Jobs', href: '/dashboard/customers', icon: Users },
   { name: 'Service Catalog', href: '/dashboard/catalog', icon: BookOpen },
-  { name: 'Invoices', href: '/dashboard/invoice', icon: Receipt },
+  { name: 'Invoices', href: '/dashboard/invoices', icon: Receipt },
 ];
 
 export default function Sidebar() {
@@ -99,7 +99,7 @@ export default function Sidebar() {
         </button>
 
         <Link
-          href="/dashboard/settings"
+          href="/dashboard/account"
           className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition-all ${
             pathname === '/dashboard/settings'
               ? 'bg-slate-800 text-white'
@@ -109,17 +109,6 @@ export default function Sidebar() {
           <Settings size={18} className="text-slate-500 group-hover:text-white" />
           Settings
         </Link>
-
-        {/* 3. LOGOUT FORM (Keep it simple) */}
-        <form action={signOut} className="mt-2">
-          <button
-            type="submit"
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-slate-400 transition-all hover:bg-red-500/10 hover:text-red-400"
-          >
-            <LogOut size={18} />
-            Sign Out
-          </button>
-        </form>
       </div>
     </aside>
   );

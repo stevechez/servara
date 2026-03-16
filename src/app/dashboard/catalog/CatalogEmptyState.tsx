@@ -31,10 +31,10 @@ export default function CatalogEmptyState() {
 
         {/* Action Button */}
         <div className="mt-10 flex flex-col items-center gap-4">
-          <button className="flex w-full max-w-xs items-center justify-center gap-3 rounded-2xl bg-slate-900 py-4 text-[10px] font-black tracking-widest text-white transition-all hover:bg-blue-600 dark:bg-white dark:text-slate-900 dark:hover:bg-blue-500 dark:hover:text-white">
+          {/* <button className="flex w-full max-w-xs items-center justify-center gap-3 rounded-2xl bg-slate-900 py-4 text-[10px] font-black tracking-widest text-white transition-all hover:bg-blue-600 dark:bg-white dark:text-slate-900 dark:hover:bg-blue-500 dark:hover:text-white">
             <Plus size={16} />
             ADD YOUR FIRST SERVICE
-          </button>
+          </button> */}
 
           <div className="mt-4 flex items-center gap-6">
             <div className="flex items-center gap-2 text-[9px] font-black tracking-widest text-slate-400 uppercase">
